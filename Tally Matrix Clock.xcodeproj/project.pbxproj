@@ -1,0 +1,577 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXContainerItemProxy section */
+		C088BAEC2EA15E2000D73652 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C088BAD62EA15E1F00D73652 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C088BADD2EA15E1F00D73652;
+			remoteInfo = "Tally Matrix Clock";
+		};
+		C088BAF62EA15E2000D73652 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C088BAD62EA15E1F00D73652 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C088BADD2EA15E1F00D73652;
+			remoteInfo = "Tally Matrix Clock";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		C088BADE2EA15E1F00D73652 /* Tally Matrix Clock.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Tally Matrix Clock.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C088BAEB2EA15E2000D73652 /* Tally Matrix ClockTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Tally Matrix ClockTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C088BAF52EA15E2000D73652 /* Tally Matrix ClockUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Tally Matrix ClockUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		C088BAE02EA15E1F00D73652 /* Tally Matrix Clock */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Tally Matrix Clock";
+			sourceTree = "<group>";
+		};
+		C088BAEE2EA15E2000D73652 /* Tally Matrix ClockTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Tally Matrix ClockTests";
+			sourceTree = "<group>";
+		};
+		C088BAF82EA15E2000D73652 /* Tally Matrix ClockUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Tally Matrix ClockUITests";
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C088BADB2EA15E1F00D73652 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C088BAE82EA15E2000D73652 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C088BAF22EA15E2000D73652 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		C088BAD52EA15E1F00D73652 = {
+			isa = PBXGroup;
+			children = (
+				C088BAE02EA15E1F00D73652 /* Tally Matrix Clock */,
+				C088BAEE2EA15E2000D73652 /* Tally Matrix ClockTests */,
+				C088BAF82EA15E2000D73652 /* Tally Matrix ClockUITests */,
+				C088BADF2EA15E1F00D73652 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		C088BADF2EA15E1F00D73652 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C088BADE2EA15E1F00D73652 /* Tally Matrix Clock.app */,
+				C088BAEB2EA15E2000D73652 /* Tally Matrix ClockTests.xctest */,
+				C088BAF52EA15E2000D73652 /* Tally Matrix ClockUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		C088BADD2EA15E1F00D73652 /* Tally Matrix Clock */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C088BAFF2EA15E2000D73652 /* Build configuration list for PBXNativeTarget "Tally Matrix Clock" */;
+			buildPhases = (
+				C088BADA2EA15E1F00D73652 /* Sources */,
+				C088BADB2EA15E1F00D73652 /* Frameworks */,
+				C088BADC2EA15E1F00D73652 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				C088BAE02EA15E1F00D73652 /* Tally Matrix Clock */,
+			);
+			name = "Tally Matrix Clock";
+			packageProductDependencies = (
+			);
+			productName = "Tally Matrix Clock";
+			productReference = C088BADE2EA15E1F00D73652 /* Tally Matrix Clock.app */;
+			productType = "com.apple.product-type.application";
+		};
+		C088BAEA2EA15E2000D73652 /* Tally Matrix ClockTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C088BB022EA15E2000D73652 /* Build configuration list for PBXNativeTarget "Tally Matrix ClockTests" */;
+			buildPhases = (
+				C088BAE72EA15E2000D73652 /* Sources */,
+				C088BAE82EA15E2000D73652 /* Frameworks */,
+				C088BAE92EA15E2000D73652 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C088BAED2EA15E2000D73652 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				C088BAEE2EA15E2000D73652 /* Tally Matrix ClockTests */,
+			);
+			name = "Tally Matrix ClockTests";
+			packageProductDependencies = (
+			);
+			productName = "Tally Matrix ClockTests";
+			productReference = C088BAEB2EA15E2000D73652 /* Tally Matrix ClockTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		C088BAF42EA15E2000D73652 /* Tally Matrix ClockUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C088BB052EA15E2000D73652 /* Build configuration list for PBXNativeTarget "Tally Matrix ClockUITests" */;
+			buildPhases = (
+				C088BAF12EA15E2000D73652 /* Sources */,
+				C088BAF22EA15E2000D73652 /* Frameworks */,
+				C088BAF32EA15E2000D73652 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C088BAF72EA15E2000D73652 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				C088BAF82EA15E2000D73652 /* Tally Matrix ClockUITests */,
+			);
+			name = "Tally Matrix ClockUITests";
+			packageProductDependencies = (
+			);
+			productName = "Tally Matrix ClockUITests";
+			productReference = C088BAF52EA15E2000D73652 /* Tally Matrix ClockUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		C088BAD62EA15E1F00D73652 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					C088BADD2EA15E1F00D73652 = {
+						CreatedOnToolsVersion = 26.0;
+					};
+					C088BAEA2EA15E2000D73652 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = C088BADD2EA15E1F00D73652;
+					};
+					C088BAF42EA15E2000D73652 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = C088BADD2EA15E1F00D73652;
+					};
+				};
+			};
+			buildConfigurationList = C088BAD92EA15E1F00D73652 /* Build configuration list for PBXProject "Tally Matrix Clock" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = C088BAD52EA15E1F00D73652;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = C088BADF2EA15E1F00D73652 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C088BADD2EA15E1F00D73652 /* Tally Matrix Clock */,
+				C088BAEA2EA15E2000D73652 /* Tally Matrix ClockTests */,
+				C088BAF42EA15E2000D73652 /* Tally Matrix ClockUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C088BADC2EA15E1F00D73652 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C088BAE92EA15E2000D73652 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C088BAF32EA15E2000D73652 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C088BADA2EA15E1F00D73652 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C088BAE72EA15E2000D73652 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C088BAF12EA15E2000D73652 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C088BAED2EA15E2000D73652 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C088BADD2EA15E1F00D73652 /* Tally Matrix Clock */;
+			targetProxy = C088BAEC2EA15E2000D73652 /* PBXContainerItemProxy */;
+		};
+		C088BAF72EA15E2000D73652 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C088BADD2EA15E1F00D73652 /* Tally Matrix Clock */;
+			targetProxy = C088BAF62EA15E2000D73652 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		C088BAFD2EA15E2000D73652 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 3X3F6UJ44H;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = appletvos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				TVOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		C088BAFE2EA15E2000D73652 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 3X3F6UJ44H;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = appletvos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				TVOS_DEPLOYMENT_TARGET = 26.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		C088BB002EA15E2000D73652 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3X3F6UJ44H;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.Inkwell.Tally-Matrix-Clock";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+			};
+			name = Debug;
+		};
+		C088BB012EA15E2000D73652 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3X3F6UJ44H;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.Inkwell.Tally-Matrix-Clock";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+			};
+			name = Release;
+		};
+		C088BB032EA15E2000D73652 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3X3F6UJ44H;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.Inkwell.Tally-Matrix-ClockTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tally Matrix Clock.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Tally Matrix Clock";
+				TVOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		C088BB042EA15E2000D73652 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3X3F6UJ44H;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.Inkwell.Tally-Matrix-ClockTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Tally Matrix Clock.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Tally Matrix Clock";
+				TVOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+		C088BB062EA15E2000D73652 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3X3F6UJ44H;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.Inkwell.Tally-Matrix-ClockUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TEST_TARGET_NAME = "Tally Matrix Clock";
+			};
+			name = Debug;
+		};
+		C088BB072EA15E2000D73652 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3X3F6UJ44H;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.Inkwell.Tally-Matrix-ClockUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TEST_TARGET_NAME = "Tally Matrix Clock";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		C088BAD92EA15E1F00D73652 /* Build configuration list for PBXProject "Tally Matrix Clock" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C088BAFD2EA15E2000D73652 /* Debug */,
+				C088BAFE2EA15E2000D73652 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C088BAFF2EA15E2000D73652 /* Build configuration list for PBXNativeTarget "Tally Matrix Clock" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C088BB002EA15E2000D73652 /* Debug */,
+				C088BB012EA15E2000D73652 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C088BB022EA15E2000D73652 /* Build configuration list for PBXNativeTarget "Tally Matrix ClockTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C088BB032EA15E2000D73652 /* Debug */,
+				C088BB042EA15E2000D73652 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C088BB052EA15E2000D73652 /* Build configuration list for PBXNativeTarget "Tally Matrix ClockUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C088BB062EA15E2000D73652 /* Debug */,
+				C088BB072EA15E2000D73652 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = C088BAD62EA15E1F00D73652 /* Project object */;
+}
