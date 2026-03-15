@@ -19,6 +19,7 @@ struct ContentView: View {
     @State private var patterns: [Int: Set<Int>] = [:]
     @State private var colors: [Int: [Color]] = [:]
     @State private var lastPatternChange = Date()
+    @State private var lastDigits: [Int] = [-1, -1, -1, -1]
     
     @FocusState private var isFocused: Bool
     
@@ -61,13 +62,26 @@ struct ContentView: View {
         }
         .onReceive(timer) { _ in
             currentTime = Date()
-            
-            let elapsed = Date().timeIntervalSince(lastPatternChange)
-            if elapsed >= patternInterval {
+
+            // Check if any digit changed — if so, update patterns immediately
+            let currentDigits = [hoursTens, hoursOnes, minutesTens, minutesOnes]
+            let digitsChanged = currentDigits != lastDigits
+
+            if digitsChanged {
+                lastDigits = currentDigits
                 withAnimation(.easeInOut(duration: 0.5)) {
                     updatePatterns()
                 }
                 lastPatternChange = Date()
+            } else {
+                // Still shuffle patterns on the interval for visual variety
+                let elapsed = Date().timeIntervalSince(lastPatternChange)
+                if elapsed >= patternInterval {
+                    withAnimation(.easeInOut(duration: 0.5)) {
+                        updatePatterns()
+                    }
+                    lastPatternChange = Date()
+                }
             }
         }
         .onMoveCommand { direction in
