@@ -9,16 +9,38 @@ import SwiftUI
 import Combine
 import WeatherKit
 import CoreLocation
+import MusicKit
 
 struct ContentView: View {
     @State private var currentTime = Date()
     @State private var showSettings = false
-    @State private var showBase10 = true
-    @State private var use24Hour = true
-    @State private var showDate = false
-    @State private var showWeather = false
-    @State private var colorScheme: ColorSchemeOption = .randomRGB
-    @State private var patternInterval: Double = 60.0
+    @AppStorage("showBase10") private var showBase10 = true
+    @AppStorage("use24Hour") private var use24Hour = true
+    @AppStorage("showDate") private var showDate = false
+    @AppStorage("showWeather") private var showWeather = false
+    @AppStorage("showGlyphRain") private var showGlyphRain = false
+    @State private var textTargets: [TextTarget] = []
+    @AppStorage("backgroundMusic") private var backgroundMusic = false
+    @AppStorage("musicStationRaw") private var musicStationRaw: String = MusicStationOption.none.rawValue
+    @State private var musicAuthorized = false
+    @State private var nowPlayingTitle: String = ""
+    @State private var showEasterEgg = true
+    @State private var starburstOpacity: Double = 0.0
+    @State private var engineeredOpacity: Double = 0.0
+    @State private var phraseOpacity: Double = 0.0
+    @State private var easterEggOpacity: Double = 1.0
+    @State private var clockOpacity: Double = 0.0
+
+    private let easterEggPhrases = [
+        "The clock is watching . . .",
+        "Time never sleeps . . .",
+        "Every hour is accounted for . . .",
+        "Wake up. Count the squares . . .",
+        "Follow the lit squares . . ."
+    ]
+    @State private var easterEggPhrase: String = ""
+    @AppStorage("colorSchemeRaw") private var colorSchemeRaw: String = ColorSchemeOption.randomRGB.rawValue
+    @AppStorage("patternInterval") private var patternInterval: Double = 60.0
 
     @State private var patterns: [Int: Set<Int>] = [:]
     @State private var colors: [Int: [Color]] = [:]
@@ -32,6 +54,16 @@ struct ContentView: View {
 
     @StateObject private var locationManager = LocationManager()
 
+    private var colorScheme: ColorSchemeOption {
+        get { ColorSchemeOption(rawValue: colorSchemeRaw) ?? .randomRGB }
+        set { colorSchemeRaw = newValue.rawValue }
+    }
+
+    private var musicStation: MusicStationOption {
+        get { MusicStationOption(rawValue: musicStationRaw) ?? .none }
+        set { musicStationRaw = newValue.rawValue }
+    }
+
     @FocusState private var isFocused: Bool
 
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -39,18 +71,24 @@ struct ContentView: View {
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            
+
+            if showGlyphRain {
+                GlyphRainView(colorScheme: colorScheme, textTargets: textTargets)
+                    .ignoresSafeArea()
+                    .opacity(clockOpacity)
+            }
+
             VStack(spacing: 60) {
                 Spacer()
-                
+
                 HStack(spacing: 0) {
-                    TallyMatrix1x3(value: hoursTens, pattern: patterns[0] ?? [], colors: colors[0] ?? [], isPMIndicator: !use24Hour, showPM: isPM, glow: colorScheme == .phosphorGreen || colorScheme == .phosphorAmber || colorScheme == .cgaPhosphor)
+                    TallyMatrix1x3(value: hoursTens, pattern: patterns[0] ?? [], colors: colors[0] ?? [], isPMIndicator: !use24Hour, showPM: isPM, glow: colorScheme == .phosphorGreen || colorScheme == .phosphorAmber || colorScheme == .cgaPhosphor || colorScheme == .phosphorBlue)
                     Spacer().frame(width: 40)
-                    TallyMatrix3x3(value: hoursOnes, pattern: patterns[1] ?? [], colors: colors[1] ?? [], glow: colorScheme == .phosphorGreen || colorScheme == .phosphorAmber || colorScheme == .cgaPhosphor)
+                    TallyMatrix3x3(value: hoursOnes, pattern: patterns[1] ?? [], colors: colors[1] ?? [], glow: colorScheme == .phosphorGreen || colorScheme == .phosphorAmber || colorScheme == .cgaPhosphor || colorScheme == .phosphorBlue)
                     Spacer().frame(width: 120)
-                    TallyMatrix3x3(value: minutesTens, pattern: patterns[2] ?? [], colors: colors[2] ?? [], glow: colorScheme == .phosphorGreen || colorScheme == .phosphorAmber || colorScheme == .cgaPhosphor)
+                    TallyMatrix3x3(value: minutesTens, pattern: patterns[2] ?? [], colors: colors[2] ?? [], glow: colorScheme == .phosphorGreen || colorScheme == .phosphorAmber || colorScheme == .cgaPhosphor || colorScheme == .phosphorBlue)
                     Spacer().frame(width: 40)
-                    TallyMatrix3x3(value: minutesOnes, pattern: patterns[3] ?? [], colors: colors[3] ?? [], glow: colorScheme == .phosphorGreen || colorScheme == .phosphorAmber || colorScheme == .cgaPhosphor)
+                    TallyMatrix3x3(value: minutesOnes, pattern: patterns[3] ?? [], colors: colors[3] ?? [], glow: colorScheme == .phosphorGreen || colorScheme == .phosphorAmber || colorScheme == .cgaPhosphor || colorScheme == .phosphorBlue)
                 }
                 
                 Spacer()
@@ -60,33 +98,99 @@ struct ContentView: View {
                         Text(baseTimeString)
                             .font(.system(size: 60, weight: .thin, design: .monospaced))
                             .foregroundColor(.white.opacity(0.6))
+                            .background(
+                                GeometryReader { geo in
+                                    Color.clear.preference(key: TextTargetKey.self, value: [
+                                        TextTarget(text: baseTimeString, frame: geo.frame(in: .global), fontSize: 60, isMonospaced: true)
+                                    ])
+                                }
+                            )
                     }
 
                     if showDate {
                         Text(dateString)
-                            .font(.system(size: 40, weight: .thin))
-                            .foregroundColor(.white.opacity(0.5))
+                            .font(.system(size: 44, weight: .regular))
+                            .foregroundColor(.white)
+                            .background(
+                                GeometryReader { geo in
+                                    Color.clear.preference(key: TextTargetKey.self, value: [
+                                        TextTarget(text: dateString, frame: geo.frame(in: .global), fontSize: 40, isMonospaced: false)
+                                    ])
+                                }
+                            )
                     }
 
                     if showWeather && !weatherTemp.isEmpty {
                         HStack(spacing: 12) {
                             if !weatherSymbol.isEmpty {
                                 Image(systemName: weatherSymbol)
-                                    .font(.system(size: 36))
-                                    .foregroundColor(.white.opacity(0.5))
+                                    .font(.system(size: 40))
+                                    .foregroundColor(.white)
                             }
                             Text(weatherTemp)
-                                .font(.system(size: 40, weight: .thin, design: .monospaced))
-                                .foregroundColor(.white.opacity(0.5))
+                                .font(.system(size: 44, weight: .regular, design: .monospaced))
+                                .foregroundColor(.white)
+                                .background(
+                                    GeometryReader { geo in
+                                        Color.clear.preference(key: TextTargetKey.self, value: [
+                                            TextTarget(text: weatherTemp, frame: geo.frame(in: .global), fontSize: 40, isMonospaced: true)
+                                        ])
+                                    }
+                                )
                             Text(weatherCondition)
-                                .font(.system(size: 36, weight: .thin))
-                                .foregroundColor(.white.opacity(0.4))
+                                .font(.system(size: 40, weight: .regular))
+                                .foregroundColor(.white)
+                                .background(
+                                    GeometryReader { geo in
+                                        Color.clear.preference(key: TextTargetKey.self, value: [
+                                            TextTarget(text: weatherCondition, frame: geo.frame(in: .global), fontSize: 36, isMonospaced: false)
+                                        ])
+                                    }
+                                )
+                        }
+                    }
+
+                    if backgroundMusic && !nowPlayingTitle.isEmpty {
+                        HStack(spacing: 8) {
+                            Image(systemName: "music.note")
+                                .font(.system(size: 28))
+                                .foregroundColor(.white.opacity(0.3))
+                            Text(nowPlayingTitle)
+                                .font(.system(size: 30, weight: .thin))
+                                .foregroundColor(.white.opacity(0.3))
+                                .lineLimit(1)
                         }
                     }
                 }
 
                 Spacer().frame(height: 100)
             }
+            .opacity(clockOpacity)
+
+            // Easter egg overlay
+            if showEasterEgg {
+                VStack(spacing: 0) {
+                    ClaudeStarburstView()
+                        .frame(width: 200, height: 200)
+                        .opacity(starburstOpacity)
+
+                    Text("Engineered with Claude by Anthropic")
+                        .font(.system(size: 48, weight: .light))
+                        .foregroundColor(Color(red: 0.85, green: 0.55, blue: 0.35))
+                        .opacity(engineeredOpacity)
+                        .padding(.top, 40)
+
+                    Text(easterEggPhrase)
+                        .font(.system(size: 32, weight: .ultraLight, design: .monospaced))
+                        .foregroundColor(.white.opacity(0.5))
+                        .opacity(phraseOpacity)
+                        .padding(.top, 30)
+                }
+                .opacity(easterEggOpacity)
+            }
+        }
+        .onPreferenceChange(TextTargetKey.self) { targets in
+            textTargets = targets
         }
         .focusable()
         .focused($isFocused)
@@ -95,6 +199,48 @@ struct ContentView: View {
             updatePatterns()
             lastPatternChange = Date()
             fetchWeather()
+            startBackgroundMusic()
+
+            // Easter egg: sequenced ominous reveal
+            easterEggPhrase = easterEggPhrases.randomElement()!
+
+            // 0s — starburst slowly materializes from darkness
+            withAnimation(.easeIn(duration: 3.0)) {
+                starburstOpacity = 1.0
+            }
+
+            // 3s — "Engineered with Claude by Anthropic" creeps in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                withAnimation(.easeIn(duration: 2.0)) {
+                    engineeredOpacity = 1.0
+                }
+            }
+
+            // 6s — the phrase appears, slow and deliberate
+            DispatchQueue.main.asyncAfter(deadline: .now() + 6.0) {
+                withAnimation(.easeIn(duration: 2.5)) {
+                    phraseOpacity = 1.0
+                }
+            }
+
+            // 10s — hold in silence, then everything dissolves
+            DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
+                withAnimation(.easeOut(duration: 3.0)) {
+                    easterEggOpacity = 0.0
+                }
+            }
+
+            // 13s — clock emerges from the void
+            DispatchQueue.main.asyncAfter(deadline: .now() + 13.0) {
+                withAnimation(.easeIn(duration: 2.0)) {
+                    clockOpacity = 1.0
+                }
+            }
+
+            // 15s — cleanup
+            DispatchQueue.main.asyncAfter(deadline: .now() + 15.0) {
+                showEasterEgg = false
+            }
         }
         .onReceive(timer) { _ in
             currentTime = Date()
@@ -123,19 +269,42 @@ struct ContentView: View {
             // Refresh weather periodically
             fetchWeather()
         }
+        .onTapGesture {
+            let player = ApplicationMusicPlayer.shared
+            let isPlaying = player.state.playbackStatus == .playing || player.state.playbackStatus == .paused
+            if backgroundMusic && isPlaying {
+                Task { try? await player.skipToNextEntry() }
+            } else {
+                showSettings = true
+            }
+        }
         .onMoveCommand { direction in
-            showSettings = true
+            let player = ApplicationMusicPlayer.shared
+            let isPlaying = player.state.playbackStatus == .playing || player.state.playbackStatus == .paused
+            if backgroundMusic && isPlaying {
+                switch direction {
+                case .right:
+                    Task { try? await player.skipToNextEntry() }
+                case .left:
+                    Task { try? await player.skipToPreviousEntry() }
+                default:
+                    showSettings = true
+                }
+            } else {
+                showSettings = true
+            }
         }
         .onPlayPauseCommand {
             showSettings = true
         }
         .sheet(isPresented: $showSettings) {
-            SettingsView(showBase10: $showBase10, use24Hour: $use24Hour, showDate: $showDate, showWeather: $showWeather, colorScheme: $colorScheme, patternInterval: $patternInterval)
+            SettingsView(showBase10: $showBase10, use24Hour: $use24Hour, showDate: $showDate, showWeather: $showWeather, showGlyphRain: $showGlyphRain, backgroundMusic: $backgroundMusic, musicStationRaw: $musicStationRaw, colorSchemeRaw: $colorSchemeRaw, patternInterval: $patternInterval)
                 .onDisappear {
                     currentTime = Date()
                     updatePatterns()
                     lastPatternChange = Date()
                     isFocused = true
+                    startBackgroundMusic()
                 }
         }
     }
@@ -171,6 +340,59 @@ struct ContentView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE, MMMM d, yyyy"
         return formatter.string(from: currentTime)
+    }
+
+    func startBackgroundMusic() {
+        guard backgroundMusic, musicStation != .none else {
+            stopBackgroundMusic()
+            return
+        }
+
+        Task {
+            let status = await MusicAuthorization.request()
+            await MainActor.run { musicAuthorized = status == .authorized }
+            guard status == .authorized else {
+                await MainActor.run { nowPlayingTitle = "Music not authorized" }
+                return
+            }
+
+            do {
+                // Try stations first
+                var stationRequest = MusicCatalogSearchRequest(term: musicStation.searchTerm, types: [Station.self])
+                stationRequest.limit = 1
+                let stationResponse = try await stationRequest.response()
+
+                if let station = stationResponse.stations.first {
+                    let player = ApplicationMusicPlayer.shared
+                    player.queue = [station]
+                    try await player.play()
+                    await MainActor.run { nowPlayingTitle = station.name }
+                    return
+                }
+
+                // Fall back to playlists
+                var playlistRequest = MusicCatalogSearchRequest(term: musicStation.searchTerm, types: [Playlist.self])
+                playlistRequest.limit = 1
+                let playlistResponse = try await playlistRequest.response()
+
+                if let playlist = playlistResponse.playlists.first {
+                    let player = ApplicationMusicPlayer.shared
+                    player.queue = [playlist]
+                    try await player.play()
+                    await MainActor.run { nowPlayingTitle = playlist.name }
+                } else {
+                    await MainActor.run { nowPlayingTitle = "No results found" }
+                }
+            } catch {
+                await MainActor.run { nowPlayingTitle = "Error: \(error.localizedDescription)" }
+            }
+        }
+    }
+
+    func stopBackgroundMusic() {
+        let player = ApplicationMusicPlayer.shared
+        player.stop()
+        nowPlayingTitle = ""
     }
 
     func fetchWeather() {
@@ -240,6 +462,8 @@ struct ContentView: View {
             return Array(repeating: Color(red: 0.0, green: 1.0, blue: 0.0), count: count)
         case .phosphorAmber:
             return Array(repeating: Color(red: 1.0, green: 0.75, blue: 0.0), count: count)
+        case .phosphorBlue:
+            return Array(repeating: Color(red: 0.2, green: 0.4, blue: 1.0), count: count)
         case .cgaPhosphor:
             let cgaPalette: [Color] = [
                 Color(red: 0.0, green: 0.0, blue: 0.67),   // Blue
@@ -337,8 +561,21 @@ struct SettingsView: View {
     @Binding var use24Hour: Bool
     @Binding var showDate: Bool
     @Binding var showWeather: Bool
-    @Binding var colorScheme: ColorSchemeOption
+    @Binding var showGlyphRain: Bool
+    @Binding var backgroundMusic: Bool
+    @Binding var musicStationRaw: String
+    @Binding var colorSchemeRaw: String
     @Binding var patternInterval: Double
+
+    private var colorScheme: ColorSchemeOption {
+        get { ColorSchemeOption(rawValue: colorSchemeRaw) ?? .randomRGB }
+        set { colorSchemeRaw = newValue.rawValue }
+    }
+
+    private var musicStation: MusicStationOption {
+        get { MusicStationOption(rawValue: musicStationRaw) ?? .none }
+        set { musicStationRaw = newValue.rawValue }
+    }
 
     var body: some View {
         ZStack {
@@ -387,7 +624,52 @@ struct SettingsView: View {
                             Toggle("", isOn: $showWeather)
                                 .labelsHidden()
                         }
-                        
+
+                        HStack {
+                            Text("Glyph Rain")
+                                .font(.system(size: 36))
+                                .foregroundColor(.white)
+                            Spacer()
+                            Toggle("", isOn: $showGlyphRain)
+                                .labelsHidden()
+                        }
+
+                        Divider().background(Color.white.opacity(0.3))
+
+                        HStack {
+                            Text("Background Music")
+                                .font(.system(size: 36))
+                                .foregroundColor(.white)
+                            Spacer()
+                            Toggle("", isOn: $backgroundMusic)
+                                .labelsHidden()
+                        }
+
+                        if backgroundMusic {
+                            VStack(alignment: .leading, spacing: 20) {
+                                Text("Station")
+                                    .font(.system(size: 36))
+                                    .foregroundColor(.white)
+
+                                ForEach(MusicStationOption.allCases, id: \.self) { opt in
+                                    Button {
+                                        musicStationRaw = opt.rawValue
+                                    } label: {
+                                        HStack {
+                                            Image(systemName: musicStation == opt ? "checkmark.circle.fill" : "circle")
+                                                .font(.system(size: 28))
+                                            Text(opt.rawValue)
+                                                .font(.system(size: 30))
+                                            Spacer()
+                                        }
+                                        .foregroundColor(.white)
+                                        .padding(.vertical, 8)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+
                         Divider().background(Color.white.opacity(0.3))
                         
                         VStack(alignment: .leading, spacing: 20) {
@@ -397,7 +679,7 @@ struct SettingsView: View {
                             
                             ForEach(ColorSchemeOption.allCases, id: \.self) { opt in
                                 Button {
-                                    colorScheme = opt
+                                    colorSchemeRaw = opt.rawValue
                                 } label: {
                                     HStack {
                                         Image(systemName: colorScheme == opt ? "checkmark.circle.fill" : "circle")
@@ -467,6 +749,32 @@ struct IntervalButton: View {
     }
 }
 
+enum MusicStationOption: String, CaseIterable {
+    case none = "Off"
+    case ambient = "Ambient"
+    case chillout = "Chill"
+    case classical = "Classical"
+    case lofi = "Lo-Fi"
+    case jazz = "Jazz"
+    case acidJazz = "Acid Jazz"
+    case country = "Country"
+    case electronic = "Electronic"
+
+    var searchTerm: String {
+        switch self {
+        case .none: return ""
+        case .ambient: return "ambient relaxation"
+        case .chillout: return "chill vibes"
+        case .classical: return "classical essentials"
+        case .lofi: return "lofi beats"
+        case .jazz: return "jazz chill"
+        case .acidJazz: return "acid jazz"
+        case .country: return "country hits"
+        case .electronic: return "pure electronic"
+        }
+    }
+}
+
 enum ColorSchemeOption: String, CaseIterable {
     case randomRGB = "Random RGB (Each Square)"
     case matrixColors = "Matrix Colors (Per Matrix)"
@@ -474,6 +782,219 @@ enum ColorSchemeOption: String, CaseIterable {
     case phosphorGreen = "Phosphor Green (Glow)"
     case phosphorAmber = "Amber Phosphor (Glow)"
     case cgaPhosphor = "CGA Phosphor (Glow)"
+    case phosphorBlue = "Blue Phosphor (Glow)"
+}
+
+struct TextTarget: Equatable {
+    let text: String
+    let frame: CGRect
+    let fontSize: CGFloat
+    let isMonospaced: Bool
+
+    func characterAt(x: CGFloat) -> Character? {
+        guard frame.contains(CGPoint(x: x, y: frame.midY)) else { return nil }
+        let charWidth = isMonospaced ? fontSize * 0.6 : frame.width / CGFloat(max(text.count, 1))
+        let relativeX = x - frame.minX
+        let charIndex = Int(relativeX / charWidth)
+        guard charIndex >= 0 && charIndex < text.count else { return nil }
+        return text[text.index(text.startIndex, offsetBy: charIndex)]
+    }
+}
+
+struct TextTargetKey: PreferenceKey {
+    static var defaultValue: [TextTarget] = []
+    static func reduce(value: inout [TextTarget], nextValue: () -> [TextTarget]) {
+        value.append(contentsOf: nextValue())
+    }
+}
+
+struct GlyphRainView: View {
+    let colorScheme: ColorSchemeOption
+    var textTargets: [TextTarget] = []
+    @State private var columns: [RainColumn] = []
+    let timer = Timer.publish(every: 0.08, on: .main, in: .common).autoconnect()
+
+    private let glyphs = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%&*+=?/<>~^{}[]|\\:;ァカサタナハマヤラワアイウエオ"
+
+    var body: some View {
+        GeometryReader { geo in
+            Canvas { context, size in
+                for column in columns {
+                    for (index, glyph) in column.glyphs.enumerated() {
+                        let y = column.y + CGFloat(index) * column.fontSize * 1.2
+                        guard y > -column.fontSize && y < size.height + column.fontSize else { continue }
+
+                        // Head glyph is brightest, trail fades
+                        let trailLength = column.glyphs.count
+                        let distFromHead = trailLength - 1 - index
+                        let brightness = max(0.05, 1.0 - (Double(distFromHead) / Double(max(trailLength, 1))))
+
+                        let color = colorForColumn(column, brightness: brightness)
+
+                        var text = Text(String(glyph))
+                            .font(.system(size: column.fontSize, weight: .light, design: .monospaced))
+                            .foregroundColor(color)
+                        // Head glyph gets a glow effect via brighter color
+                        if index == column.glyphs.count - 1 {
+                            text = Text(String(glyph))
+                                .font(.system(size: column.fontSize, weight: .bold, design: .monospaced))
+                                .foregroundColor(color)
+                        }
+
+                        context.drawLayer { ctx in
+                            let resolved = ctx.resolve(text)
+                            ctx.draw(resolved, at: CGPoint(x: column.x, y: y))
+                        }
+                    }
+                }
+            }
+            .onAppear {
+                initializeColumns(width: geo.size.width, height: geo.size.height)
+            }
+            .onReceive(timer) { _ in
+                updateColumns(height: geo.size.height)
+            }
+        }
+    }
+
+    func initializeColumns(width: CGFloat, height: CGFloat) {
+        let columnCount = Int(width / 22)
+        columns = (0..<columnCount).map { i in
+            let fontSize: CGFloat = CGFloat.random(in: 14...24)
+            let x = CGFloat(i) * (width / CGFloat(columnCount)) + CGFloat.random(in: -5...5)
+            let trailLength = Int.random(in: 8...25)
+            let speed: CGFloat = CGFloat.random(in: 3...10)
+            let startY = -CGFloat.random(in: 0...height * 1.5)
+
+            return RainColumn(
+                x: x,
+                y: startY,
+                speed: speed,
+                fontSize: fontSize,
+                trailLength: trailLength,
+                glyphs: (0..<trailLength).map { _ in randomGlyph() },
+                columnColor: randomColumnColor()
+            )
+        }
+    }
+
+    func updateColumns(height: CGFloat) {
+        for i in columns.indices {
+            columns[i].y += columns[i].speed
+
+            // Check text collisions — head glyph picks up characters it passes through
+            let headIndex = columns[i].glyphs.count - 1
+            let headY = columns[i].y + CGFloat(headIndex) * columns[i].fontSize * 1.2
+
+            for target in textTargets {
+                // Check if the head is passing through this text's vertical band
+                if headY >= target.frame.minY && headY <= target.frame.maxY {
+                    if let char = target.characterAt(x: columns[i].x) {
+                        // Morph the head glyph to match the text character
+                        columns[i].glyphs[headIndex] = char
+                        // Also stamp a few trailing glyphs with the same character
+                        for j in max(0, headIndex - 3)..<headIndex {
+                            columns[i].glyphs[j] = char
+                        }
+                    }
+                }
+            }
+
+            // Randomly mutate glyphs in the trail (but not recently morphed ones near head)
+            if Int.random(in: 0...3) == 0 {
+                let idx = Int.random(in: 0..<max(1, columns[i].glyphs.count - 4))
+                columns[i].glyphs[idx] = randomGlyph()
+            }
+
+            // Reset column when fully off screen
+            let totalHeight = CGFloat(columns[i].glyphs.count) * columns[i].fontSize * 1.2
+            if columns[i].y - totalHeight > height {
+                columns[i].y = -totalHeight - CGFloat.random(in: 0...300)
+                columns[i].speed = CGFloat.random(in: 3...10)
+                columns[i].trailLength = Int.random(in: 8...25)
+                columns[i].glyphs = (0..<columns[i].trailLength).map { _ in randomGlyph() }
+                columns[i].columnColor = randomColumnColor()
+            }
+        }
+    }
+
+    func randomGlyph() -> Character {
+        glyphs.randomElement()!
+    }
+
+    func randomColumnColor() -> Color {
+        let primaryColors: [Color] = [.red, .green, .blue]
+        let cgaPalette: [Color] = [
+            Color(red: 0.0, green: 0.0, blue: 0.67),
+            Color(red: 0.0, green: 0.67, blue: 0.0),
+            Color(red: 0.0, green: 0.67, blue: 0.67),
+            Color(red: 0.67, green: 0.0, blue: 0.0),
+            Color(red: 0.67, green: 0.0, blue: 0.67),
+            Color(red: 0.67, green: 0.33, blue: 0.0),
+            Color(red: 0.33, green: 0.33, blue: 1.0),
+            Color(red: 0.33, green: 1.0, blue: 0.33),
+            Color(red: 0.33, green: 1.0, blue: 1.0),
+            Color(red: 1.0, green: 0.33, blue: 0.33),
+            Color(red: 1.0, green: 0.33, blue: 1.0),
+            Color(red: 1.0, green: 1.0, blue: 0.33),
+            Color(red: 1.0, green: 1.0, blue: 1.0),
+        ]
+
+        switch colorScheme {
+        case .randomRGB: return primaryColors.randomElement()!
+        case .matrixColors: return primaryColors.randomElement()!
+        case .singleColor: return primaryColors.randomElement()!
+        case .phosphorGreen: return Color(red: 0.0, green: 1.0, blue: 0.0)
+        case .phosphorAmber: return Color(red: 1.0, green: 0.75, blue: 0.0)
+        case .phosphorBlue: return Color(red: 0.2, green: 0.4, blue: 1.0)
+        case .cgaPhosphor: return cgaPalette.randomElement()!
+        }
+    }
+
+    func colorForColumn(_ column: RainColumn, brightness: Double) -> Color {
+        column.columnColor.opacity(brightness * 0.7)
+    }
+}
+
+struct RainColumn {
+    var x: CGFloat
+    var y: CGFloat
+    var speed: CGFloat
+    var fontSize: CGFloat
+    var trailLength: Int
+    var glyphs: [Character]
+    var columnColor: Color
+}
+
+struct ClaudeStarburstView: View {
+    let terracotta = Color(red: 0.85, green: 0.55, blue: 0.35)
+
+    var body: some View {
+        Canvas { context, size in
+            let center = CGPoint(x: size.width / 2, y: size.height / 2)
+            let outerRadius = min(size.width, size.height) / 2
+            let innerRadius = outerRadius * 0.35
+            let points = 8
+
+            var path = Path()
+            for i in 0..<(points * 2) {
+                let angle = (Double(i) * .pi / Double(points)) - .pi / 2
+                let radius = i % 2 == 0 ? outerRadius : innerRadius
+                let point = CGPoint(
+                    x: center.x + CGFloat(cos(angle)) * radius,
+                    y: center.y + CGFloat(sin(angle)) * radius
+                )
+                if i == 0 {
+                    path.move(to: point)
+                } else {
+                    path.addLine(to: point)
+                }
+            }
+            path.closeSubpath()
+
+            context.fill(path, with: .color(terracotta))
+        }
+    }
 }
 
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
