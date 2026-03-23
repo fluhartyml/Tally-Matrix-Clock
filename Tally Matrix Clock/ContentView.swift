@@ -848,17 +848,17 @@ enum GlyphRainSize: String, CaseIterable {
 
     var fontSizeRange: ClosedRange<CGFloat> {
         switch self {
-        case .small: return 10...16
-        case .medium: return 14...24
-        case .large: return 22...36
+        case .small: return 22...36
+        case .medium: return 36...52
+        case .large: return 52...72
         }
     }
 
     var columnSpacing: CGFloat {
         switch self {
-        case .small: return 16
-        case .medium: return 22
-        case .large: return 32
+        case .small: return 32
+        case .medium: return 44
+        case .large: return 60
         }
     }
 }
