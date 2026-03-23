@@ -11,6 +11,7 @@ import WeatherKit
 import CoreLocation
 import MusicKit
 import MediaPlayer
+import AVKit
 
 struct ContentView: View {
     @StateObject private var settings = CloudSettings.shared
@@ -218,13 +219,7 @@ struct ContentView: View {
                     HStack {
                         Spacer()
                         VStack(alignment: .trailing, spacing: 4) {
-                            HStack(spacing: 8) {
-                                Text(settings.isLeader ? "Leader" : "Follower")
-                                if !settings.isLeader && !settings.leaderDeviceName.isEmpty {
-                                    Image(systemName: "speaker.slash.fill")
-                                        .font(.system(size: 18))
-                                }
-                            }
+                            Text(settings.isLeader ? "Leader" : "Follower")
                         }
                             .font(.system(size: 22, weight: .medium, design: .monospaced))
                             .foregroundColor(schemeColor.opacity(0.8))
@@ -389,15 +384,19 @@ struct ContentView: View {
             }
         }
         .onChange(of: settings.isLeader) { _, newValue in
-            // If we just became the leader, start music if enabled
+            // If we just became the leader, delay music start to let MusicKit connect
             if newValue {
-                startBackgroundMusic()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                    startBackgroundMusic()
+                }
             }
         }
         .onChange(of: settings.cloudReady) { _, ready in
             // CloudKit responded — start music if we're the leader (or independent)
             if ready {
-                startBackgroundMusic()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                    startBackgroundMusic()
+                }
             }
         }
         .sheet(isPresented: $showSettings) {
@@ -472,41 +471,51 @@ struct ContentView: View {
                 return
             }
 
-            do {
-                // Try stations first
-                var stationRequest = MusicCatalogSearchRequest(term: musicStation.searchTerm, types: [Station.self])
-                stationRequest.limit = 1
-                let stationResponse = try await stationRequest.response()
+            // Retry up to 3 times — MusicKit connection may not be ready ("ping did not pong")
+            for attempt in 1...3 {
+                do {
+                    // Try stations first
+                    var stationRequest = MusicCatalogSearchRequest(term: musicStation.searchTerm, types: [Station.self])
+                    stationRequest.limit = 1
+                    let stationResponse = try await stationRequest.response()
 
-                if let station = stationResponse.stations.first {
-                    let player = ApplicationMusicPlayer.shared
-                    player.queue = [station]
-                    try await player.play()
-                    await MainActor.run {
-                        nowPlayingTitle = station.name
-                        suppressNowPlayingOverlay()
+                    if let station = stationResponse.stations.first {
+                        let player = ApplicationMusicPlayer.shared
+                        player.queue = [station]
+                        try await player.prepareToPlay()
+                        try await player.play()
+                        await MainActor.run {
+                            nowPlayingTitle = station.name
+                            suppressNowPlayingOverlay()
+                        }
+                        return
                     }
-                    return
-                }
 
-                // Fall back to playlists
-                var playlistRequest = MusicCatalogSearchRequest(term: musicStation.searchTerm, types: [Playlist.self])
-                playlistRequest.limit = 1
-                let playlistResponse = try await playlistRequest.response()
+                    // Fall back to playlists
+                    var playlistRequest = MusicCatalogSearchRequest(term: musicStation.searchTerm, types: [Playlist.self])
+                    playlistRequest.limit = 1
+                    let playlistResponse = try await playlistRequest.response()
 
-                if let playlist = playlistResponse.playlists.first {
-                    let player = ApplicationMusicPlayer.shared
-                    player.queue = [playlist]
-                    try await player.play()
-                    await MainActor.run {
-                        nowPlayingTitle = playlist.name
-                        suppressNowPlayingOverlay()
+                    if let playlist = playlistResponse.playlists.first {
+                        let player = ApplicationMusicPlayer.shared
+                        player.queue = [playlist]
+                        try await player.prepareToPlay()
+                        try await player.play()
+                        await MainActor.run {
+                            nowPlayingTitle = playlist.name
+                            suppressNowPlayingOverlay()
+                        }
+                    } else {
+                        await MainActor.run { nowPlayingTitle = "No results found" }
                     }
-                } else {
-                    await MainActor.run { nowPlayingTitle = "No results found" }
+                    return // Success — exit retry loop
+                } catch {
+                    if attempt < 3 {
+                        try? await Task.sleep(nanoseconds: 2_000_000_000) // Wait 2s before retry
+                    } else {
+                        await MainActor.run { nowPlayingTitle = "Error: \(error.localizedDescription)" }
+                    }
                 }
-            } catch {
-                await MainActor.run { nowPlayingTitle = "Error: \(error.localizedDescription)" }
             }
         }
     }
@@ -911,6 +920,21 @@ struct SettingsView: View {
                             Text(settings.isLeader ? "This TV controls settings for all TVs" : settings.leaderDeviceName.isEmpty ? "No leader set — all TVs independent" : "Following: \(settings.leaderDeviceName)")
                                 .font(.system(size: 28))
                                 .foregroundColor(tint.opacity(0.6))
+
+                            if settings.isLeader {
+                                Divider().background(subtleTint)
+
+                                Text("AirPlay Speakers")
+                                    .font(.system(size: 36))
+                                    .foregroundColor(tint)
+
+                                Text("Select other TVs to stream audio from this leader")
+                                    .font(.system(size: 28))
+                                    .foregroundColor(tint.opacity(0.6))
+
+                                AirPlayPickerView()
+                                    .frame(width: 80, height: 80)
+                            }
                         }
                     }
                     .padding(.horizontal, 80)
@@ -931,6 +955,17 @@ struct SettingsView: View {
             }
         }
     }
+}
+
+struct AirPlayPickerView: UIViewRepresentable {
+    func makeUIView(context: Context) -> AVRoutePickerView {
+        let picker = AVRoutePickerView()
+        picker.activeTintColor = .systemBlue
+        picker.tintColor = .white
+        return picker
+    }
+
+    func updateUIView(_ uiView: AVRoutePickerView, context: Context) {}
 }
 
 struct IntervalButton: View {

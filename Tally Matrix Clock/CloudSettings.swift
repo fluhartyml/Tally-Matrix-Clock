@@ -162,9 +162,17 @@ class CloudSettings: ObservableObject {
         if let v = record["backgroundMusic"] as? Bool { backgroundMusic = v }
         if let v = record["playInBackground"] as? Bool { playInBackground = v }
         if let v = record["musicStationRaw"] as? String { musicStationRaw = v }
-        if let v = record["colorSchemeRaw"] as? String { colorSchemeRaw = v }
+        if let v = record["colorSchemeRaw"] as? String {
+            if colorSchemeRaw != v {
+                print("CloudKit: Color scheme changed from \(colorSchemeRaw) to \(v)")
+            }
+            colorSchemeRaw = v
+        }
         if let v = record["patternInterval"] as? Double { patternInterval = v }
         if let v = record["leaderDeviceName"] as? String {
+            if leaderDeviceName != v {
+                print("CloudKit: Leader changed from \(leaderDeviceName) to \(v)")
+            }
             leaderDeviceName = v
             isLeader = !v.isEmpty && v == deviceName
         }
