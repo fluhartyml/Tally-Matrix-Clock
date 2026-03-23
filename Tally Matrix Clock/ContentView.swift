@@ -97,7 +97,7 @@ struct ContentView: View {
                     if showBase10 {
                         Text(baseTimeString)
                             .font(.system(size: 60, weight: .thin, design: .monospaced))
-                            .foregroundColor(.white.opacity(0.6))
+                            .foregroundColor(.white)
                             .background(
                                 GeometryReader { geo in
                                     Color.clear.preference(key: TextTargetKey.self, value: [
@@ -154,10 +154,10 @@ struct ContentView: View {
                         HStack(spacing: 8) {
                             Image(systemName: "music.note")
                                 .font(.system(size: 28))
-                                .foregroundColor(.white.opacity(0.3))
+                                .foregroundColor(.white)
                             Text(nowPlayingTitle)
-                                .font(.system(size: 30, weight: .thin))
-                                .foregroundColor(.white.opacity(0.3))
+                                .font(.system(size: 30, weight: .regular))
+                                .foregroundColor(.white)
                                 .lineLimit(1)
                         }
                     }
