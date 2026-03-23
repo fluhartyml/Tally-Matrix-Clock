@@ -299,32 +299,22 @@ struct ContentView: View {
             }
         }
         .onTapGesture {
-            let player = ApplicationMusicPlayer.shared
-            let isPlaying = player.state.playbackStatus == .playing || player.state.playbackStatus == .paused
-            if backgroundMusic && isPlaying {
-                Task { try? await player.skipToNextEntry() }
+            if backgroundMusic && ApplicationMusicPlayer.shared.state.playbackStatus == .playing {
+                Task { try? await ApplicationMusicPlayer.shared.skipToNextEntry() }
             } else {
                 showSettings = true
             }
         }
-        .onMoveCommand { direction in
-            let player = ApplicationMusicPlayer.shared
-            let isPlaying = player.state.playbackStatus == .playing || player.state.playbackStatus == .paused
-            if backgroundMusic && isPlaying {
-                switch direction {
-                case .right:
-                    Task { try? await player.skipToNextEntry() }
-                case .left:
-                    Task { try? await player.skipToPreviousEntry() }
-                default:
-                    showSettings = true
-                }
-            } else {
-                showSettings = true
-            }
+        .onMoveCommand { _ in
+            showSettings = true
         }
         .onPlayPauseCommand {
-            showSettings = true
+            let player = ApplicationMusicPlayer.shared
+            if player.state.playbackStatus == .playing {
+                player.pause()
+            } else {
+                Task { try? await player.play() }
+            }
         }
         .sheet(isPresented: $showSettings) {
             SettingsView(showBase10: $showBase10, use24Hour: $use24Hour, showDate: $showDate, showWeather: $showWeather, showGlyphRain: $showGlyphRain, glyphRainSizeRaw: $glyphRainSizeRaw, backgroundMusic: $backgroundMusic, musicStationRaw: $musicStationRaw, colorSchemeRaw: $colorSchemeRaw, patternInterval: $patternInterval)
