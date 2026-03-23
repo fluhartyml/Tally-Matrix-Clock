@@ -23,6 +23,7 @@ struct ContentView: View {
     @AppStorage("glyphRainSizeRaw") private var glyphRainSizeRaw: String = GlyphRainSize.medium.rawValue
     @State private var textTargets: [TextTarget] = []
     @AppStorage("backgroundMusic") private var backgroundMusic = false
+    @AppStorage("playInBackground") private var playInBackground = false
     @AppStorage("musicStationRaw") private var musicStationRaw: String = MusicStationOption.none.rawValue
     @State private var musicAuthorized = false
     @State private var nowPlayingTitle: String = ""
@@ -87,6 +88,7 @@ struct ContentView: View {
         set { musicStationRaw = newValue.rawValue }
     }
 
+    @Environment(\.scenePhase) private var scenePhase
     @FocusState private var isFocused: Bool
 
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -316,8 +318,13 @@ struct ContentView: View {
                 Task { try? await player.play() }
             }
         }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .background && !playInBackground {
+                stopBackgroundMusic()
+            }
+        }
         .sheet(isPresented: $showSettings) {
-            SettingsView(showBase10: $showBase10, use24Hour: $use24Hour, showDate: $showDate, showWeather: $showWeather, showGlyphRain: $showGlyphRain, glyphRainSizeRaw: $glyphRainSizeRaw, backgroundMusic: $backgroundMusic, musicStationRaw: $musicStationRaw, colorSchemeRaw: $colorSchemeRaw, patternInterval: $patternInterval)
+            SettingsView(showBase10: $showBase10, use24Hour: $use24Hour, showDate: $showDate, showWeather: $showWeather, showGlyphRain: $showGlyphRain, glyphRainSizeRaw: $glyphRainSizeRaw, backgroundMusic: $backgroundMusic, playInBackground: $playInBackground, musicStationRaw: $musicStationRaw, colorSchemeRaw: $colorSchemeRaw, patternInterval: $patternInterval)
                 .onDisappear {
                     currentTime = Date()
                     updatePatterns()
@@ -595,6 +602,7 @@ struct SettingsView: View {
     @Binding var showGlyphRain: Bool
     @Binding var glyphRainSizeRaw: String
     @Binding var backgroundMusic: Bool
+    @Binding var playInBackground: Bool
     @Binding var musicStationRaw: String
     @Binding var colorSchemeRaw: String
     @Binding var patternInterval: Double
@@ -702,6 +710,33 @@ struct SettingsView: View {
                         }
 
                         if backgroundMusic {
+                            HStack {
+                                Text("Play in Background")
+                                    .font(.system(size: 36))
+                                    .foregroundColor(.white)
+                                Spacer()
+                                Toggle("", isOn: $playInBackground)
+                                    .labelsHidden()
+                            }
+
+                            Button {
+                                let player = ApplicationMusicPlayer.shared
+                                player.stop()
+                            } label: {
+                                HStack {
+                                    Image(systemName: "stop.fill")
+                                        .font(.system(size: 24))
+                                    Text("Stop Music")
+                                        .font(.system(size: 30))
+                                }
+                                .foregroundColor(.white)
+                                .padding(.vertical, 12)
+                                .padding(.horizontal, 24)
+                                .background(Color.red.opacity(0.6))
+                                .cornerRadius(8)
+                            }
+                            .buttonStyle(.plain)
+
                             VStack(alignment: .leading, spacing: 20) {
                                 Text("Station")
                                     .font(.system(size: 36))
