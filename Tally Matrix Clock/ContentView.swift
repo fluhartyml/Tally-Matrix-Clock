@@ -72,6 +72,16 @@ struct ContentView: View {
         ColorSchemeOption(rawValue: settings.colorSchemeRaw) ?? .randomRGB
     }
 
+    private var schemeColor: Color {
+        switch colorScheme {
+        case .phosphorGreen: return Color(red: 0.0, green: 1.0, blue: 0.0)
+        case .phosphorAmber: return Color(red: 1.0, green: 0.75, blue: 0.0)
+        case .phosphorBlue: return Color(red: 0.2, green: 0.4, blue: 1.0)
+        case .cgaPhosphor: return Color(red: 0.33, green: 1.0, blue: 0.33)
+        default: return .white
+        }
+    }
+
     private var musicStation: MusicStationOption {
         MusicStationOption(rawValue: settings.musicStationRaw) ?? .none
     }
@@ -179,6 +189,32 @@ struct ContentView: View {
                 Spacer().frame(height: 100)
             }
             .opacity(clockOpacity)
+
+            // Leader/Follower badge — bottom right
+            if !showEasterEgg {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Text(settings.isLeader ? "Leader" : "Follower")
+                            .font(.system(size: 22, weight: .medium, design: .monospaced))
+                            .foregroundColor(schemeColor.opacity(0.8))
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(schemeColor.opacity(0.1))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(schemeColor.opacity(0.25), lineWidth: 1)
+                                    )
+                            )
+                            .padding(.trailing, 40)
+                            .padding(.bottom, 30)
+                    }
+                }
+                .opacity(clockOpacity)
+            }
 
             // Easter egg overlay
             if showEasterEgg {
@@ -768,13 +804,43 @@ struct SettingsView: View {
                             Text("Pattern Change Interval")
                                 .font(.system(size: 36))
                                 .foregroundColor(.white)
-                            
+
                             HStack(spacing: 20) {
                                 IntervalButton(interval: 5.0, currentInterval: $settings.patternInterval)
                                 IntervalButton(interval: 15.0, currentInterval: $settings.patternInterval)
                                 IntervalButton(interval: 30.0, currentInterval: $settings.patternInterval)
                                 IntervalButton(interval: 60.0, currentInterval: $settings.patternInterval)
                             }
+                        }
+
+                        Divider().background(Color.white.opacity(0.3))
+
+                        VStack(alignment: .leading, spacing: 20) {
+                            Text("Multi-TV Sync")
+                                .font(.system(size: 36))
+                                .foregroundColor(.white)
+
+                            HStack {
+                                Text("Set as Leader")
+                                    .font(.system(size: 36))
+                                    .foregroundColor(.white)
+                                Spacer()
+                                Toggle("", isOn: Binding(
+                                    get: { settings.isLeader },
+                                    set: { newValue in
+                                        if newValue {
+                                            settings.setAsLeader()
+                                        } else {
+                                            settings.resignLeader()
+                                        }
+                                    }
+                                ))
+                                .labelsHidden()
+                            }
+
+                            Text(settings.isLeader ? "This TV controls settings for all TVs" : settings.leaderDeviceName.isEmpty ? "No leader set — all TVs independent" : "Following: \(settings.leaderDeviceName)")
+                                .font(.system(size: 28))
+                                .foregroundColor(.white.opacity(0.6))
                         }
                     }
                     .padding(.horizontal, 80)
