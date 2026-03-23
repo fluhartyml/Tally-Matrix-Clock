@@ -820,23 +820,25 @@ struct SettingsView: View {
                                 .font(.system(size: 36))
                                 .foregroundColor(.white)
 
-                            HStack {
-                                Text("Set as Leader")
-                                    .font(.system(size: 36))
-                                    .foregroundColor(.white)
-                                Spacer()
-                                Toggle("", isOn: Binding(
-                                    get: { settings.isLeader },
-                                    set: { newValue in
-                                        if newValue {
-                                            settings.setAsLeader()
-                                        } else {
-                                            settings.resignLeader()
-                                        }
-                                    }
-                                ))
-                                .labelsHidden()
+                            Button {
+                                if settings.isLeader {
+                                    settings.resignLeader()
+                                } else {
+                                    settings.setAsLeader()
+                                }
+                            } label: {
+                                HStack {
+                                    Text("Set as Leader")
+                                        .font(.system(size: 36))
+                                    Spacer()
+                                    Text(settings.isLeader ? "On" : "Off")
+                                        .font(.system(size: 30))
+                                        .foregroundColor(settings.isLeader ? .green : .gray)
+                                }
+                                .foregroundColor(.white)
+                                .padding(.vertical, 8)
                             }
+                            .buttonStyle(.plain)
 
                             Text(settings.isLeader ? "This TV controls settings for all TVs" : settings.leaderDeviceName.isEmpty ? "No leader set — all TVs independent" : "Following: \(settings.leaderDeviceName)")
                                 .font(.system(size: 28))
