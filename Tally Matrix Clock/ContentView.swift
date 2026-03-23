@@ -199,6 +199,18 @@ struct ContentView: View {
             }
             .opacity(clockOpacity)
 
+            // Device name — top center (testing)
+            if !showEasterEgg {
+                VStack {
+                    Text(settings.deviceName)
+                        .font(.system(size: 48, weight: .bold, design: .monospaced))
+                        .foregroundColor(schemeColor)
+                        .padding(.top, 30)
+                    Spacer()
+                }
+                .opacity(clockOpacity)
+            }
+
             // Leader/Follower badge — bottom right
             if !showEasterEgg {
                 VStack {
@@ -206,8 +218,6 @@ struct ContentView: View {
                     HStack {
                         Spacer()
                         VStack(alignment: .trailing, spacing: 4) {
-                            Text(settings.deviceName)
-                                .font(.system(size: 18, weight: .regular, design: .monospaced))
                             HStack(spacing: 8) {
                                 Text(settings.isLeader ? "Leader" : "Follower")
                                 if !settings.isLeader && !settings.leaderDeviceName.isEmpty {
@@ -359,6 +369,7 @@ struct ContentView: View {
             showSettings = true
         }
         .onPlayPauseCommand {
+            guard !isFollower else { return }
             let player = ApplicationMusicPlayer.shared
             if player.state.playbackStatus == .playing {
                 player.pause()
@@ -380,6 +391,12 @@ struct ContentView: View {
         .onChange(of: settings.isLeader) { _, newValue in
             // If we just became the leader, start music if enabled
             if newValue {
+                startBackgroundMusic()
+            }
+        }
+        .onChange(of: settings.cloudReady) { _, ready in
+            // CloudKit responded — start music if we're the leader (or independent)
+            if ready {
                 startBackgroundMusic()
             }
         }
@@ -433,6 +450,9 @@ struct ContentView: View {
     }
 
     func startBackgroundMusic() {
+        // Wait for CloudKit to confirm our role before touching the music player
+        guard settings.cloudReady else { return }
+
         guard settings.backgroundMusic, musicStation != .none else {
             stopBackgroundMusic()
             return
@@ -493,7 +513,9 @@ struct ContentView: View {
 
     func stopBackgroundMusic() {
         let player = ApplicationMusicPlayer.shared
-        player.stop()
+        if player.state.playbackStatus == .playing || player.state.playbackStatus == .paused {
+            player.stop()
+        }
         nowPlayingTitle = ""
     }
 

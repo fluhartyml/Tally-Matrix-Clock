@@ -3,7 +3,7 @@
 //  Tally Matrix Clock
 //
 //  CloudKit-backed settings sync across all Apple TVs
-//  Leader pushes settings → CloudKit record → silent push → followers pull
+//  Leader pushes settings → CloudKit record → followers poll every 1s
 //
 
 import Foundation
@@ -19,7 +19,9 @@ class CloudSettings: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var initializing = true
     private let recordID = CKRecord.ID(recordName: "SharedSettings")
-    private let subscriptionID = "settings-changes"
+    private var pollTimer: Timer?
+    @Published var cloudReady: Bool = false
+    private var lastPushTime: Date = .distantPast
 
     // Display settings
     @Published var showBase10: Bool { didSet { syncToCloud() } }
@@ -42,12 +44,20 @@ class CloudSettings: ObservableObject {
     @Published var leaderDeviceName: String { didSet { syncToCloud() } }
     @Published var isLeader: Bool = false
 
+    // Unique per-device ID (persists across launches, unique per Apple TV)
+    let deviceID: String = {
+        let key = "tallyMatrixDeviceID"
+        if let existing = UserDefaults.standard.string(forKey: key) {
+            return existing
+        }
+        let new = UUID().uuidString.prefix(8).lowercased()
+        UserDefaults.standard.set(String(new), forKey: key)
+        return String(new)
+    }()
+
+    // Display name: "Apple TV" + unique suffix so you can tell them apart
     var deviceName: String {
-        #if os(tvOS)
-        return UIDevice.current.name
-        #else
-        return Host.current().localizedName ?? "Unknown"
-        #endif
+        return "Apple TV (\(deviceID))"
     }
 
     private init() {
@@ -65,15 +75,17 @@ class CloudSettings: ObservableObject {
         patternInterval = local.object(forKey: "patternInterval") as? Double ?? 60.0
         leaderDeviceName = local.string(forKey: "leaderDeviceName") ?? ""
 
-        isLeader = !leaderDeviceName.isEmpty && leaderDeviceName == deviceName
+        // Don't trust local cache for leadership — CloudKit is the authority
+        // Start as non-leader; pullFromCloud will promote us if we're actually leader
+        isLeader = false
 
         initializing = false
 
-        // Pull latest from CloudKit
+        // Pull from CloudKit to get the real leader state
         pullFromCloud()
 
-        // Subscribe to changes so we get silent push notifications
-        subscribeToChanges()
+        // Poll CloudKit every 1 second for changes
+        startPolling()
     }
 
     // MARK: - CloudKit Push
@@ -85,6 +97,7 @@ class CloudSettings: ObservableObject {
         // Only the leader (or independent devices) push to CloudKit
         guard leaderDeviceName.isEmpty || isLeader else { return }
 
+        lastPushTime = Date()
         let record = CKRecord(recordType: "Settings", recordID: recordID)
         record["showBase10"] = showBase10 as CKRecordValue
         record["use24Hour"] = use24Hour as CKRecordValue
@@ -100,10 +113,12 @@ class CloudSettings: ObservableObject {
         record["leaderDeviceName"] = leaderDeviceName as CKRecordValue
 
         let operation = CKModifyRecordsOperation(recordsToSave: [record])
-        operation.savePolicy = .changedKeys
+        operation.savePolicy = .allKeys
         operation.modifyRecordsResultBlock = { result in
             if case .failure(let error) = result {
                 print("CloudKit save error: \(error.localizedDescription)")
+            } else {
+                print("CloudKit: Settings pushed successfully")
             }
         }
         container.publicCloudDatabase.add(operation)
@@ -115,14 +130,22 @@ class CloudSettings: ObservableObject {
         container.publicCloudDatabase.fetch(withRecordID: recordID) { [weak self] record, error in
             guard let self = self, let record = record else {
                 if let error = error as? CKError, error.code == .unknownItem {
-                    // No record yet — leader will create it on first settings change
-                    print("CloudKit: No settings record yet")
+                    print("CloudKit: No settings record yet — toggle leader in settings to create it")
+                }
+                DispatchQueue.main.async {
+                    self?.cloudReady = true
                 }
                 return
             }
 
             DispatchQueue.main.async {
+                // Don't overwrite local changes if we just pushed — wait for CloudKit to catch up
+                if Date().timeIntervalSince(self.lastPushTime) < 3.0 {
+                    if !self.cloudReady { self.cloudReady = true }
+                    return
+                }
                 self.applyCloudRecord(record)
+                self.cloudReady = true
             }
         }
     }
@@ -165,50 +188,23 @@ class CloudSettings: ObservableObject {
         local.set(leaderDeviceName, forKey: "leaderDeviceName")
     }
 
-    // MARK: - CloudKit Subscription
+    // MARK: - CloudKit Polling
 
-    private func subscribeToChanges() {
-        // Check if subscription already exists
-        container.publicCloudDatabase.fetch(withSubscriptionID: subscriptionID) { [weak self] subscription, error in
-            if subscription != nil { return } // Already subscribed
-
-            guard let self = self else { return }
-
-            let subscription = CKQuerySubscription(
-                recordType: "Settings",
-                predicate: NSPredicate(value: true),
-                subscriptionID: self.subscriptionID,
-                options: [.firesOnRecordUpdate, .firesOnRecordCreation]
-            )
-
-            let info = CKSubscription.NotificationInfo()
-            info.shouldSendContentAvailable = true // Silent push
-            subscription.notificationInfo = info
-
-            self.container.publicCloudDatabase.save(subscription) { _, error in
-                if let error = error {
-                    print("CloudKit subscription error: \(error.localizedDescription)")
-                }
-            }
+    private func startPolling() {
+        pollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.pullFromCloud()
         }
-    }
-
-    // Called from AppDelegate when silent push arrives
-    func handleRemoteNotification() {
-        pullFromCloud()
     }
 
     // MARK: - Leader Controls
 
     func setAsLeader() {
-        leaderDeviceName = deviceName
         isLeader = true
+        leaderDeviceName = deviceName  // didSet → syncToCloud, isLeader is already true so push goes through
     }
 
     func resignLeader() {
-        if isLeader {
-            leaderDeviceName = ""
-            isLeader = false
-        }
+        isLeader = false
+        leaderDeviceName = ""  // didSet → syncToCloud pushes empty leader
     }
 }
