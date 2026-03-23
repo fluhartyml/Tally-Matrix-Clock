@@ -78,12 +78,21 @@ struct ContentView: View {
         case .phosphorAmber: return Color(red: 1.0, green: 0.75, blue: 0.0)
         case .phosphorBlue: return Color(red: 0.2, green: 0.4, blue: 1.0)
         case .cgaPhosphor: return Color(red: 0.33, green: 1.0, blue: 0.33)
+        case .crimson: return Color(red: 0.6, green: 0.0, blue: 0.05)
         default: return .white
         }
     }
 
     private var musicStation: MusicStationOption {
         MusicStationOption(rawValue: settings.musicStationRaw) ?? .none
+    }
+
+    private var glowEnabled: Bool {
+        [.phosphorGreen, .phosphorAmber, .phosphorBlue, .cgaPhosphor, .crimson].contains(colorScheme)
+    }
+
+    private var textColor: Color {
+        colorScheme == .crimson ? schemeColor : .white
     }
 
     @Environment(\.scenePhase) private var scenePhase
@@ -105,13 +114,13 @@ struct ContentView: View {
                 Spacer()
 
                 HStack(spacing: 0) {
-                    TallyMatrix1x3(value: hoursTens, pattern: patterns[0] ?? [], colors: colors[0] ?? [], isPMIndicator: !settings.use24Hour, showPM: isPM, glow: colorScheme == .phosphorGreen || colorScheme == .phosphorAmber || colorScheme == .cgaPhosphor || colorScheme == .phosphorBlue)
+                    TallyMatrix1x3(value: hoursTens, pattern: patterns[0] ?? [], colors: colors[0] ?? [], isPMIndicator: !settings.use24Hour, showPM: isPM, glow: glowEnabled)
                     Spacer().frame(width: 40)
-                    TallyMatrix3x3(value: hoursOnes, pattern: patterns[1] ?? [], colors: colors[1] ?? [], glow: colorScheme == .phosphorGreen || colorScheme == .phosphorAmber || colorScheme == .cgaPhosphor || colorScheme == .phosphorBlue)
+                    TallyMatrix3x3(value: hoursOnes, pattern: patterns[1] ?? [], colors: colors[1] ?? [], glow: glowEnabled)
                     Spacer().frame(width: 120)
-                    TallyMatrix3x3(value: minutesTens, pattern: patterns[2] ?? [], colors: colors[2] ?? [], glow: colorScheme == .phosphorGreen || colorScheme == .phosphorAmber || colorScheme == .cgaPhosphor || colorScheme == .phosphorBlue)
+                    TallyMatrix3x3(value: minutesTens, pattern: patterns[2] ?? [], colors: colors[2] ?? [], glow: glowEnabled)
                     Spacer().frame(width: 40)
-                    TallyMatrix3x3(value: minutesOnes, pattern: patterns[3] ?? [], colors: colors[3] ?? [], glow: colorScheme == .phosphorGreen || colorScheme == .phosphorAmber || colorScheme == .cgaPhosphor || colorScheme == .phosphorBlue)
+                    TallyMatrix3x3(value: minutesOnes, pattern: patterns[3] ?? [], colors: colors[3] ?? [], glow: glowEnabled)
                 }
                 
                 Spacer()
@@ -120,7 +129,7 @@ struct ContentView: View {
                     if settings.showBase10 {
                         Text(baseTimeString)
                             .font(.system(size: 60, weight: .thin, design: .monospaced))
-                            .foregroundColor(.white)
+                            .foregroundColor(textColor)
                             .background(
                                 GeometryReader { geo in
                                     Color.clear.preference(key: TextTargetKey.self, value: [
@@ -133,7 +142,7 @@ struct ContentView: View {
                     if settings.showDate {
                         Text(dateString)
                             .font(.system(size: 44, weight: .regular))
-                            .foregroundColor(.white)
+                            .foregroundColor(textColor)
                             .background(
                                 GeometryReader { geo in
                                     Color.clear.preference(key: TextTargetKey.self, value: [
@@ -148,11 +157,11 @@ struct ContentView: View {
                             if !weatherSymbol.isEmpty {
                                 Image(systemName: weatherSymbol)
                                     .font(.system(size: 40))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(textColor)
                             }
                             Text(weatherTemp)
                                 .font(.system(size: 44, weight: .regular, design: .monospaced))
-                                .foregroundColor(.white)
+                                .foregroundColor(textColor)
                                 .background(
                                     GeometryReader { geo in
                                         Color.clear.preference(key: TextTargetKey.self, value: [
@@ -162,7 +171,7 @@ struct ContentView: View {
                                 )
                             Text(weatherCondition)
                                 .font(.system(size: 40, weight: .regular))
-                                .foregroundColor(.white)
+                                .foregroundColor(textColor)
                                 .background(
                                     GeometryReader { geo in
                                         Color.clear.preference(key: TextTargetKey.self, value: [
@@ -177,10 +186,10 @@ struct ContentView: View {
                         HStack(spacing: 8) {
                             Image(systemName: "music.note")
                                 .font(.system(size: 28))
-                                .foregroundColor(.white)
+                                .foregroundColor(textColor)
                             Text(nowPlayingTitle)
                                 .font(.system(size: 30, weight: .regular))
-                                .foregroundColor(.white)
+                                .foregroundColor(textColor)
                                 .lineLimit(1)
                         }
                     }
@@ -196,7 +205,17 @@ struct ContentView: View {
                     Spacer()
                     HStack {
                         Spacer()
-                        Text(settings.isLeader ? "Leader" : "Follower")
+                        VStack(alignment: .trailing, spacing: 4) {
+                            Text(settings.deviceName)
+                                .font(.system(size: 18, weight: .regular, design: .monospaced))
+                            HStack(spacing: 8) {
+                                Text(settings.isLeader ? "Leader" : "Follower")
+                                if !settings.isLeader && !settings.leaderDeviceName.isEmpty {
+                                    Image(systemName: "speaker.slash.fill")
+                                        .font(.system(size: 18))
+                                }
+                            }
+                        }
                             .font(.system(size: 22, weight: .medium, design: .monospaced))
                             .foregroundColor(schemeColor.opacity(0.8))
                             .padding(.horizontal, 16)
@@ -319,8 +338,13 @@ struct ContentView: View {
             // Refresh weather periodically
             fetchWeather()
 
+            // Follower mute enforcement — stop music if this device is a follower
+            if isFollower && ApplicationMusicPlayer.shared.state.playbackStatus == .playing {
+                stopBackgroundMusic()
+            }
+
             // Keep suppressing Now Playing overlay (re-override after track changes)
-            if settings.backgroundMusic {
+            if settings.backgroundMusic && !isFollower {
                 suppressNowPlayingOverlay()
             }
         }
@@ -345,6 +369,18 @@ struct ContentView: View {
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .background && !settings.playInBackground {
                 stopBackgroundMusic()
+            }
+        }
+        .onChange(of: settings.leaderDeviceName) { _, _ in
+            // If we just became a follower, stop music
+            if isFollower {
+                stopBackgroundMusic()
+            }
+        }
+        .onChange(of: settings.isLeader) { _, newValue in
+            // If we just became the leader, start music if enabled
+            if newValue {
+                startBackgroundMusic()
             }
         }
         .sheet(isPresented: $showSettings) {
@@ -392,8 +428,18 @@ struct ContentView: View {
         return formatter.string(from: currentTime)
     }
 
+    var isFollower: Bool {
+        !settings.leaderDeviceName.isEmpty && !settings.isLeader
+    }
+
     func startBackgroundMusic() {
         guard settings.backgroundMusic, musicStation != .none else {
+            stopBackgroundMusic()
+            return
+        }
+
+        // Followers don't play music — only the leader does
+        guard !isFollower else {
             stopBackgroundMusic()
             return
         }
@@ -526,6 +572,8 @@ struct ContentView: View {
             return Array(repeating: Color(red: 1.0, green: 0.75, blue: 0.0), count: count)
         case .phosphorBlue:
             return Array(repeating: Color(red: 0.2, green: 0.4, blue: 1.0), count: count)
+        case .crimson:
+            return Array(repeating: Color(red: 0.6, green: 0.0, blue: 0.05), count: count)
         case .cgaPhosphor:
             let cgaPalette: [Color] = [
                 Color(red: 0.0, green: 0.0, blue: 0.67),   // Blue
@@ -629,6 +677,22 @@ struct SettingsView: View {
         MusicStationOption(rawValue: settings.musicStationRaw) ?? .none
     }
 
+    private var isCrimson: Bool {
+        colorScheme == .crimson
+    }
+
+    private var tint: Color {
+        isCrimson ? Color(red: 0.6, green: 0.0, blue: 0.05) : .white
+    }
+
+    private var accentTint: Color {
+        isCrimson ? Color(red: 0.6, green: 0.0, blue: 0.05) : .blue
+    }
+
+    private var subtleTint: Color {
+        isCrimson ? Color(red: 0.6, green: 0.0, blue: 0.05).opacity(0.3) : Color.white.opacity(0.3)
+    }
+
     var body: some View {
         ZStack {
             Color.black.opacity(0.95).ignoresSafeArea()
@@ -636,7 +700,7 @@ struct SettingsView: View {
             VStack(spacing: 30) {
                 Text("Settings")
                     .font(.system(size: 60, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundColor(tint)
                     .padding(.top, 40)
 
                 ScrollView {
@@ -644,7 +708,7 @@ struct SettingsView: View {
                         HStack {
                             Text("Show Base-10 Time")
                                 .font(.system(size: 36))
-                                .foregroundColor(.white)
+                                .foregroundColor(tint)
                             Spacer()
                             Toggle("", isOn: $settings.showBase10)
                                 .labelsHidden()
@@ -653,7 +717,7 @@ struct SettingsView: View {
                         HStack {
                             Text("24-Hour Clock")
                                 .font(.system(size: 36))
-                                .foregroundColor(.white)
+                                .foregroundColor(tint)
                             Spacer()
                             Toggle("", isOn: $settings.use24Hour)
                                 .labelsHidden()
@@ -662,7 +726,7 @@ struct SettingsView: View {
                         HStack {
                             Text("Show Date")
                                 .font(.system(size: 36))
-                                .foregroundColor(.white)
+                                .foregroundColor(tint)
                             Spacer()
                             Toggle("", isOn: $settings.showDate)
                                 .labelsHidden()
@@ -671,7 +735,7 @@ struct SettingsView: View {
                         HStack {
                             Text("Show Weather")
                                 .font(.system(size: 36))
-                                .foregroundColor(.white)
+                                .foregroundColor(tint)
                             Spacer()
                             Toggle("", isOn: $settings.showWeather)
                                 .labelsHidden()
@@ -680,7 +744,7 @@ struct SettingsView: View {
                         HStack {
                             Text("Glyph Rain")
                                 .font(.system(size: 36))
-                                .foregroundColor(.white)
+                                .foregroundColor(tint)
                             Spacer()
                             Toggle("", isOn: $settings.showGlyphRain)
                                 .labelsHidden()
@@ -690,7 +754,7 @@ struct SettingsView: View {
                             VStack(alignment: .leading, spacing: 20) {
                                 Text("Rain Size")
                                     .font(.system(size: 36))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(tint)
 
                                 HStack(spacing: 20) {
                                     ForEach(GlyphRainSize.allCases, id: \.self) { size in
@@ -701,7 +765,7 @@ struct SettingsView: View {
                                                 .font(.system(size: 32))
                                                 .frame(maxWidth: .infinity)
                                                 .padding(.vertical, 20)
-                                                .background(settings.glyphRainSizeRaw == size.rawValue ? Color.blue : Color.gray.opacity(0.3))
+                                                .background(settings.glyphRainSizeRaw == size.rawValue ? accentTint : Color.gray.opacity(0.3))
                                                 .cornerRadius(8)
                                         }
                                         .buttonStyle(.plain)
@@ -710,12 +774,12 @@ struct SettingsView: View {
                             }
                         }
 
-                        Divider().background(Color.white.opacity(0.3))
+                        Divider().background(subtleTint)
 
                         HStack {
                             Text("Background Music")
                                 .font(.system(size: 36))
-                                .foregroundColor(.white)
+                                .foregroundColor(tint)
                             Spacer()
                             Toggle("", isOn: $settings.backgroundMusic)
                                 .labelsHidden()
@@ -725,7 +789,7 @@ struct SettingsView: View {
                             HStack {
                                 Text("Play in Background")
                                     .font(.system(size: 36))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(tint)
                                 Spacer()
                                 Toggle("", isOn: $settings.playInBackground)
                                     .labelsHidden()
@@ -734,7 +798,7 @@ struct SettingsView: View {
                             VStack(alignment: .leading, spacing: 20) {
                                 Text("Station")
                                     .font(.system(size: 36))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(tint)
 
                                 ForEach(MusicStationOption.allCases, id: \.self) { opt in
                                     Button {
@@ -747,7 +811,7 @@ struct SettingsView: View {
                                                 .font(.system(size: 30))
                                             Spacer()
                                         }
-                                        .foregroundColor(.white)
+                                        .foregroundColor(tint)
                                         .padding(.vertical, 8)
                                     }
                                     .buttonStyle(.plain)
@@ -755,13 +819,13 @@ struct SettingsView: View {
                             }
                         }
 
-                        Divider().background(Color.white.opacity(0.3))
-                        
+                        Divider().background(subtleTint)
+
                         VStack(alignment: .leading, spacing: 20) {
                             Text("Color Scheme")
                                 .font(.system(size: 36))
-                                .foregroundColor(.white)
-                            
+                                .foregroundColor(tint)
+
                             ForEach(ColorSchemeOption.allCases, id: \.self) { opt in
                                 Button {
                                     settings.colorSchemeRaw = opt.rawValue
@@ -773,34 +837,34 @@ struct SettingsView: View {
                                             .font(.system(size: 30))
                                         Spacer()
                                     }
-                                    .foregroundColor(.white)
+                                    .foregroundColor(tint)
                                     .padding(.vertical, 8)
                                 }
                                 .buttonStyle(.plain)
                             }
                         }
-                        
-                        Divider().background(Color.white.opacity(0.3))
-                        
+
+                        Divider().background(subtleTint)
+
                         VStack(alignment: .leading, spacing: 20) {
                             Text("Pattern Change Interval")
                                 .font(.system(size: 36))
-                                .foregroundColor(.white)
+                                .foregroundColor(tint)
 
                             HStack(spacing: 20) {
-                                IntervalButton(interval: 5.0, currentInterval: $settings.patternInterval)
-                                IntervalButton(interval: 15.0, currentInterval: $settings.patternInterval)
-                                IntervalButton(interval: 30.0, currentInterval: $settings.patternInterval)
-                                IntervalButton(interval: 60.0, currentInterval: $settings.patternInterval)
+                                IntervalButton(interval: 5.0, currentInterval: $settings.patternInterval, tint: accentTint)
+                                IntervalButton(interval: 15.0, currentInterval: $settings.patternInterval, tint: accentTint)
+                                IntervalButton(interval: 30.0, currentInterval: $settings.patternInterval, tint: accentTint)
+                                IntervalButton(interval: 60.0, currentInterval: $settings.patternInterval, tint: accentTint)
                             }
                         }
 
-                        Divider().background(Color.white.opacity(0.3))
+                        Divider().background(subtleTint)
 
                         VStack(alignment: .leading, spacing: 20) {
                             Text("Multi-TV Sync")
                                 .font(.system(size: 36))
-                                .foregroundColor(.white)
+                                .foregroundColor(tint)
 
                             Button {
                                 if settings.isLeader {
@@ -815,30 +879,30 @@ struct SettingsView: View {
                                     Spacer()
                                     Text(settings.isLeader ? "On" : "Off")
                                         .font(.system(size: 30))
-                                        .foregroundColor(settings.isLeader ? .green : .gray)
+                                        .foregroundColor(settings.isLeader ? (isCrimson ? tint : .green) : .gray)
                                 }
-                                .foregroundColor(.white)
+                                .foregroundColor(tint)
                                 .padding(.vertical, 8)
                             }
                             .buttonStyle(.plain)
 
                             Text(settings.isLeader ? "This TV controls settings for all TVs" : settings.leaderDeviceName.isEmpty ? "No leader set — all TVs independent" : "Following: \(settings.leaderDeviceName)")
                                 .font(.system(size: 28))
-                                .foregroundColor(.white.opacity(0.6))
+                                .foregroundColor(tint.opacity(0.6))
                         }
                     }
                     .padding(.horizontal, 80)
                     .padding(.bottom, 30)
                 }
-                
+
                 Button("Done") {
                     dismiss()
                 }
                 .font(.system(size: 40, weight: .semibold))
-                .foregroundColor(.white)
+                .foregroundColor(isCrimson ? .black : .white)
                 .padding(.horizontal, 60)
                 .padding(.vertical, 20)
-                .background(Color.blue)
+                .background(accentTint)
                 .cornerRadius(12)
                 .buttonStyle(.plain)
                 .padding(.bottom, 40)
@@ -850,7 +914,8 @@ struct SettingsView: View {
 struct IntervalButton: View {
     let interval: Double
     @Binding var currentInterval: Double
-    
+    var tint: Color = .blue
+
     var body: some View {
         Button {
             currentInterval = interval
@@ -859,7 +924,7 @@ struct IntervalButton: View {
                 .font(.system(size: 32))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 20)
-                .background(currentInterval == interval ? Color.blue : Color.gray.opacity(0.3))
+                .background(currentInterval == interval ? tint : Color.gray.opacity(0.3))
                 .cornerRadius(8)
         }
         .buttonStyle(.plain)
@@ -922,6 +987,7 @@ enum ColorSchemeOption: String, CaseIterable {
     case phosphorAmber = "Amber Phosphor (Glow)"
     case cgaPhosphor = "CGA Phosphor (Glow)"
     case phosphorBlue = "Blue Phosphor (Glow)"
+    case crimson = "Crimson (Sleep)"
 }
 
 struct TextTarget: Equatable {
@@ -1088,6 +1154,7 @@ struct GlyphRainView: View {
         case .phosphorGreen: return Color(red: 0.0, green: 1.0, blue: 0.0)
         case .phosphorAmber: return Color(red: 1.0, green: 0.75, blue: 0.0)
         case .phosphorBlue: return Color(red: 0.2, green: 0.4, blue: 1.0)
+        case .crimson: return Color(red: 0.6, green: 0.0, blue: 0.05)
         case .cgaPhosphor: return cgaPalette.randomElement()!
         }
     }
