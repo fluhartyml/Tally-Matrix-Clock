@@ -13,18 +13,10 @@ import MusicKit
 import MediaPlayer
 
 struct ContentView: View {
+    @StateObject private var settings = CloudSettings.shared
     @State private var currentTime = Date()
     @State private var showSettings = false
-    @AppStorage("showBase10") private var showBase10 = true
-    @AppStorage("use24Hour") private var use24Hour = true
-    @AppStorage("showDate") private var showDate = false
-    @AppStorage("showWeather") private var showWeather = false
-    @AppStorage("showGlyphRain") private var showGlyphRain = false
-    @AppStorage("glyphRainSizeRaw") private var glyphRainSizeRaw: String = GlyphRainSize.medium.rawValue
     @State private var textTargets: [TextTarget] = []
-    @AppStorage("backgroundMusic") private var backgroundMusic = false
-    @AppStorage("playInBackground") private var playInBackground = false
-    @AppStorage("musicStationRaw") private var musicStationRaw: String = MusicStationOption.none.rawValue
     @State private var musicAuthorized = false
     @State private var nowPlayingTitle: String = ""
     @State private var showEasterEgg = true
@@ -63,8 +55,6 @@ struct ContentView: View {
         "The computer overlords approve. You're safe. For now . . ."
     ]
     @State private var easterEggPhrase: String = ""
-    @AppStorage("colorSchemeRaw") private var colorSchemeRaw: String = ColorSchemeOption.randomRGB.rawValue
-    @AppStorage("patternInterval") private var patternInterval: Double = 60.0
 
     @State private var patterns: [Int: Set<Int>] = [:]
     @State private var colors: [Int: [Color]] = [:]
@@ -79,13 +69,11 @@ struct ContentView: View {
     @StateObject private var locationManager = LocationManager()
 
     private var colorScheme: ColorSchemeOption {
-        get { ColorSchemeOption(rawValue: colorSchemeRaw) ?? .randomRGB }
-        set { colorSchemeRaw = newValue.rawValue }
+        ColorSchemeOption(rawValue: settings.colorSchemeRaw) ?? .randomRGB
     }
 
     private var musicStation: MusicStationOption {
-        get { MusicStationOption(rawValue: musicStationRaw) ?? .none }
-        set { musicStationRaw = newValue.rawValue }
+        MusicStationOption(rawValue: settings.musicStationRaw) ?? .none
     }
 
     @Environment(\.scenePhase) private var scenePhase
@@ -97,8 +85,8 @@ struct ContentView: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            if showGlyphRain {
-                GlyphRainView(colorScheme: colorScheme, textTargets: textTargets, rainSize: GlyphRainSize(rawValue: glyphRainSizeRaw) ?? .medium)
+            if settings.showGlyphRain {
+                GlyphRainView(colorScheme: colorScheme, textTargets: textTargets, rainSize: GlyphRainSize(rawValue: settings.glyphRainSizeRaw) ?? .medium)
                     .ignoresSafeArea()
                     .opacity(clockOpacity)
             }
@@ -107,7 +95,7 @@ struct ContentView: View {
                 Spacer()
 
                 HStack(spacing: 0) {
-                    TallyMatrix1x3(value: hoursTens, pattern: patterns[0] ?? [], colors: colors[0] ?? [], isPMIndicator: !use24Hour, showPM: isPM, glow: colorScheme == .phosphorGreen || colorScheme == .phosphorAmber || colorScheme == .cgaPhosphor || colorScheme == .phosphorBlue)
+                    TallyMatrix1x3(value: hoursTens, pattern: patterns[0] ?? [], colors: colors[0] ?? [], isPMIndicator: !settings.use24Hour, showPM: isPM, glow: colorScheme == .phosphorGreen || colorScheme == .phosphorAmber || colorScheme == .cgaPhosphor || colorScheme == .phosphorBlue)
                     Spacer().frame(width: 40)
                     TallyMatrix3x3(value: hoursOnes, pattern: patterns[1] ?? [], colors: colors[1] ?? [], glow: colorScheme == .phosphorGreen || colorScheme == .phosphorAmber || colorScheme == .cgaPhosphor || colorScheme == .phosphorBlue)
                     Spacer().frame(width: 120)
@@ -119,7 +107,7 @@ struct ContentView: View {
                 Spacer()
                 
                 VStack(spacing: 16) {
-                    if showBase10 {
+                    if settings.showBase10 {
                         Text(baseTimeString)
                             .font(.system(size: 60, weight: .thin, design: .monospaced))
                             .foregroundColor(.white)
@@ -132,7 +120,7 @@ struct ContentView: View {
                             )
                     }
 
-                    if showDate {
+                    if settings.showDate {
                         Text(dateString)
                             .font(.system(size: 44, weight: .regular))
                             .foregroundColor(.white)
@@ -145,7 +133,7 @@ struct ContentView: View {
                             )
                     }
 
-                    if showWeather && !weatherTemp.isEmpty {
+                    if settings.showWeather && !weatherTemp.isEmpty {
                         HStack(spacing: 12) {
                             if !weatherSymbol.isEmpty {
                                 Image(systemName: weatherSymbol)
@@ -175,7 +163,7 @@ struct ContentView: View {
                         }
                     }
 
-                    if backgroundMusic && !nowPlayingTitle.isEmpty {
+                    if settings.backgroundMusic && !nowPlayingTitle.isEmpty {
                         HStack(spacing: 8) {
                             Image(systemName: "music.note")
                                 .font(.system(size: 28))
@@ -284,7 +272,7 @@ struct ContentView: View {
             } else {
                 // Still shuffle patterns on the interval for visual variety
                 let elapsed = Date().timeIntervalSince(lastPatternChange)
-                if elapsed >= patternInterval {
+                if elapsed >= settings.patternInterval {
                     withAnimation(.easeInOut(duration: 0.5)) {
                         updatePatterns()
                     }
@@ -296,12 +284,12 @@ struct ContentView: View {
             fetchWeather()
 
             // Keep suppressing Now Playing overlay (re-override after track changes)
-            if backgroundMusic {
+            if settings.backgroundMusic {
                 suppressNowPlayingOverlay()
             }
         }
         .onTapGesture {
-            if backgroundMusic && ApplicationMusicPlayer.shared.state.playbackStatus == .playing {
+            if settings.backgroundMusic && ApplicationMusicPlayer.shared.state.playbackStatus == .playing {
                 Task { try? await ApplicationMusicPlayer.shared.skipToNextEntry() }
             } else {
                 showSettings = true
@@ -319,12 +307,12 @@ struct ContentView: View {
             }
         }
         .onChange(of: scenePhase) { _, newPhase in
-            if newPhase == .background && !playInBackground {
+            if newPhase == .background && !settings.playInBackground {
                 stopBackgroundMusic()
             }
         }
         .sheet(isPresented: $showSettings) {
-            SettingsView(showBase10: $showBase10, use24Hour: $use24Hour, showDate: $showDate, showWeather: $showWeather, showGlyphRain: $showGlyphRain, glyphRainSizeRaw: $glyphRainSizeRaw, backgroundMusic: $backgroundMusic, playInBackground: $playInBackground, musicStationRaw: $musicStationRaw, colorSchemeRaw: $colorSchemeRaw, patternInterval: $patternInterval)
+            SettingsView(settings: settings)
                 .onDisappear {
                     currentTime = Date()
                     updatePatterns()
@@ -337,7 +325,7 @@ struct ContentView: View {
     
     var displayHour: Int {
         let hour = Calendar.current.component(.hour, from: currentTime)
-        if use24Hour {
+        if settings.use24Hour {
             return hour
         } else {
             let hour12 = hour % 12
@@ -355,7 +343,7 @@ struct ContentView: View {
     var minutesOnes: Int { Calendar.current.component(.minute, from: currentTime) % 10 }
 
     var baseTimeString: String {
-        let format = use24Hour ? "HH:mm" : "h:mm a"
+        let format = settings.use24Hour ? "HH:mm" : "h:mm a"
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = format
@@ -369,7 +357,7 @@ struct ContentView: View {
     }
 
     func startBackgroundMusic() {
-        guard backgroundMusic, musicStation != .none else {
+        guard settings.backgroundMusic, musicStation != .none else {
             stopBackgroundMusic()
             return
         }
@@ -434,7 +422,7 @@ struct ContentView: View {
     }
 
     func fetchWeather() {
-        guard showWeather else { return }
+        guard settings.showWeather else { return }
         guard let location = locationManager.location else { return }
         // Only fetch every 15 minutes
         guard Date().timeIntervalSince(lastWeatherFetch) > 900 else { return }
@@ -595,26 +583,14 @@ struct SquareView: View {
 
 struct SettingsView: View {
     @Environment(\.dismiss) var dismiss
-    @Binding var showBase10: Bool
-    @Binding var use24Hour: Bool
-    @Binding var showDate: Bool
-    @Binding var showWeather: Bool
-    @Binding var showGlyphRain: Bool
-    @Binding var glyphRainSizeRaw: String
-    @Binding var backgroundMusic: Bool
-    @Binding var playInBackground: Bool
-    @Binding var musicStationRaw: String
-    @Binding var colorSchemeRaw: String
-    @Binding var patternInterval: Double
+    @ObservedObject var settings: CloudSettings
 
     private var colorScheme: ColorSchemeOption {
-        get { ColorSchemeOption(rawValue: colorSchemeRaw) ?? .randomRGB }
-        set { colorSchemeRaw = newValue.rawValue }
+        ColorSchemeOption(rawValue: settings.colorSchemeRaw) ?? .randomRGB
     }
 
     private var musicStation: MusicStationOption {
-        get { MusicStationOption(rawValue: musicStationRaw) ?? .none }
-        set { musicStationRaw = newValue.rawValue }
+        MusicStationOption(rawValue: settings.musicStationRaw) ?? .none
     }
 
     var body: some View {
@@ -634,7 +610,7 @@ struct SettingsView: View {
                                 .font(.system(size: 36))
                                 .foregroundColor(.white)
                             Spacer()
-                            Toggle("", isOn: $showBase10)
+                            Toggle("", isOn: $settings.showBase10)
                                 .labelsHidden()
                         }
 
@@ -643,7 +619,7 @@ struct SettingsView: View {
                                 .font(.system(size: 36))
                                 .foregroundColor(.white)
                             Spacer()
-                            Toggle("", isOn: $use24Hour)
+                            Toggle("", isOn: $settings.use24Hour)
                                 .labelsHidden()
                         }
 
@@ -652,7 +628,7 @@ struct SettingsView: View {
                                 .font(.system(size: 36))
                                 .foregroundColor(.white)
                             Spacer()
-                            Toggle("", isOn: $showDate)
+                            Toggle("", isOn: $settings.showDate)
                                 .labelsHidden()
                         }
 
@@ -661,7 +637,7 @@ struct SettingsView: View {
                                 .font(.system(size: 36))
                                 .foregroundColor(.white)
                             Spacer()
-                            Toggle("", isOn: $showWeather)
+                            Toggle("", isOn: $settings.showWeather)
                                 .labelsHidden()
                         }
 
@@ -670,11 +646,11 @@ struct SettingsView: View {
                                 .font(.system(size: 36))
                                 .foregroundColor(.white)
                             Spacer()
-                            Toggle("", isOn: $showGlyphRain)
+                            Toggle("", isOn: $settings.showGlyphRain)
                                 .labelsHidden()
                         }
 
-                        if showGlyphRain {
+                        if settings.showGlyphRain {
                             VStack(alignment: .leading, spacing: 20) {
                                 Text("Rain Size")
                                     .font(.system(size: 36))
@@ -683,13 +659,13 @@ struct SettingsView: View {
                                 HStack(spacing: 20) {
                                     ForEach(GlyphRainSize.allCases, id: \.self) { size in
                                         Button {
-                                            glyphRainSizeRaw = size.rawValue
+                                            settings.glyphRainSizeRaw = size.rawValue
                                         } label: {
                                             Text(size.rawValue)
                                                 .font(.system(size: 32))
                                                 .frame(maxWidth: .infinity)
                                                 .padding(.vertical, 20)
-                                                .background(glyphRainSizeRaw == size.rawValue ? Color.blue : Color.gray.opacity(0.3))
+                                                .background(settings.glyphRainSizeRaw == size.rawValue ? Color.blue : Color.gray.opacity(0.3))
                                                 .cornerRadius(8)
                                         }
                                         .buttonStyle(.plain)
@@ -705,17 +681,17 @@ struct SettingsView: View {
                                 .font(.system(size: 36))
                                 .foregroundColor(.white)
                             Spacer()
-                            Toggle("", isOn: $backgroundMusic)
+                            Toggle("", isOn: $settings.backgroundMusic)
                                 .labelsHidden()
                         }
 
-                        if backgroundMusic {
+                        if settings.backgroundMusic {
                             HStack {
                                 Text("Play in Background")
                                     .font(.system(size: 36))
                                     .foregroundColor(.white)
                                 Spacer()
-                                Toggle("", isOn: $playInBackground)
+                                Toggle("", isOn: $settings.playInBackground)
                                     .labelsHidden()
                             }
 
@@ -744,7 +720,7 @@ struct SettingsView: View {
 
                                 ForEach(MusicStationOption.allCases, id: \.self) { opt in
                                     Button {
-                                        musicStationRaw = opt.rawValue
+                                        settings.musicStationRaw = opt.rawValue
                                     } label: {
                                         HStack {
                                             Image(systemName: musicStation == opt ? "checkmark.circle.fill" : "circle")
@@ -770,7 +746,7 @@ struct SettingsView: View {
                             
                             ForEach(ColorSchemeOption.allCases, id: \.self) { opt in
                                 Button {
-                                    colorSchemeRaw = opt.rawValue
+                                    settings.colorSchemeRaw = opt.rawValue
                                 } label: {
                                     HStack {
                                         Image(systemName: colorScheme == opt ? "checkmark.circle.fill" : "circle")
@@ -794,10 +770,10 @@ struct SettingsView: View {
                                 .foregroundColor(.white)
                             
                             HStack(spacing: 20) {
-                                IntervalButton(interval: 5.0, currentInterval: $patternInterval)
-                                IntervalButton(interval: 15.0, currentInterval: $patternInterval)
-                                IntervalButton(interval: 30.0, currentInterval: $patternInterval)
-                                IntervalButton(interval: 60.0, currentInterval: $patternInterval)
+                                IntervalButton(interval: 5.0, currentInterval: $settings.patternInterval)
+                                IntervalButton(interval: 15.0, currentInterval: $settings.patternInterval)
+                                IntervalButton(interval: 30.0, currentInterval: $settings.patternInterval)
+                                IntervalButton(interval: 60.0, currentInterval: $settings.patternInterval)
                             }
                         }
                     }
