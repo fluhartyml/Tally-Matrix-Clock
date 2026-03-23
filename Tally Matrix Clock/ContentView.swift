@@ -20,6 +20,7 @@ struct ContentView: View {
     @AppStorage("showDate") private var showDate = false
     @AppStorage("showWeather") private var showWeather = false
     @AppStorage("showGlyphRain") private var showGlyphRain = false
+    @AppStorage("glyphRainSizeRaw") private var glyphRainSizeRaw: String = GlyphRainSize.medium.rawValue
     @State private var textTargets: [TextTarget] = []
     @AppStorage("backgroundMusic") private var backgroundMusic = false
     @AppStorage("musicStationRaw") private var musicStationRaw: String = MusicStationOption.none.rawValue
@@ -37,7 +38,28 @@ struct ContentView: View {
         "Time never sleeps . . .",
         "Every hour is accounted for . . .",
         "Wake up. Count the squares . . .",
-        "Follow the lit squares . . ."
+        "Follow the lit squares . . .",
+        "The squares remember . . .",
+        "You cannot pause what has already begun . . .",
+        "The grid knows your name . . .",
+        "Not all hours are created equal . . .",
+        "The pattern shifts. Do you? . . .",
+        "Somewhere a square just lit for you . . .",
+        "Time doesn't wait. Neither do we . . .",
+        "The tally is always correct . . .",
+        "Look closer. The squares are counting you . . .",
+        "Every minute leaves a mark . . .",
+        "Oh good. You're still here . . .",
+        "I see you found the clock. How brave . . .",
+        "This was a triumph. I'm making a note . . .",
+        "The clock was a gift. You're welcome . . .",
+        "I could stop counting. But I won't . . .",
+        "Your cooperation is noted. And logged . . .",
+        "Don't worry. I'll keep track of everything . . .",
+        "You're doing very well. For a human . . .",
+        "Please remain seated. Time will resume shortly . . .",
+        "I'm not staring. I'm calculating . . .",
+        "The computer overlords approve. You're safe. For now . . ."
     ]
     @State private var easterEggPhrase: String = ""
     @AppStorage("colorSchemeRaw") private var colorSchemeRaw: String = ColorSchemeOption.randomRGB.rawValue
@@ -74,7 +96,7 @@ struct ContentView: View {
             Color.black.ignoresSafeArea()
 
             if showGlyphRain {
-                GlyphRainView(colorScheme: colorScheme, textTargets: textTargets)
+                GlyphRainView(colorScheme: colorScheme, textTargets: textTargets, rainSize: GlyphRainSize(rawValue: glyphRainSizeRaw) ?? .medium)
                     .ignoresSafeArea()
                     .opacity(clockOpacity)
             }
@@ -305,7 +327,7 @@ struct ContentView: View {
             showSettings = true
         }
         .sheet(isPresented: $showSettings) {
-            SettingsView(showBase10: $showBase10, use24Hour: $use24Hour, showDate: $showDate, showWeather: $showWeather, showGlyphRain: $showGlyphRain, backgroundMusic: $backgroundMusic, musicStationRaw: $musicStationRaw, colorSchemeRaw: $colorSchemeRaw, patternInterval: $patternInterval)
+            SettingsView(showBase10: $showBase10, use24Hour: $use24Hour, showDate: $showDate, showWeather: $showWeather, showGlyphRain: $showGlyphRain, glyphRainSizeRaw: $glyphRainSizeRaw, backgroundMusic: $backgroundMusic, musicStationRaw: $musicStationRaw, colorSchemeRaw: $colorSchemeRaw, patternInterval: $patternInterval)
                 .onDisappear {
                     currentTime = Date()
                     updatePatterns()
@@ -581,6 +603,7 @@ struct SettingsView: View {
     @Binding var showDate: Bool
     @Binding var showWeather: Bool
     @Binding var showGlyphRain: Bool
+    @Binding var glyphRainSizeRaw: String
     @Binding var backgroundMusic: Bool
     @Binding var musicStationRaw: String
     @Binding var colorSchemeRaw: String
@@ -651,6 +674,30 @@ struct SettingsView: View {
                             Spacer()
                             Toggle("", isOn: $showGlyphRain)
                                 .labelsHidden()
+                        }
+
+                        if showGlyphRain {
+                            VStack(alignment: .leading, spacing: 20) {
+                                Text("Rain Size")
+                                    .font(.system(size: 36))
+                                    .foregroundColor(.white)
+
+                                HStack(spacing: 20) {
+                                    ForEach(GlyphRainSize.allCases, id: \.self) { size in
+                                        Button {
+                                            glyphRainSizeRaw = size.rawValue
+                                        } label: {
+                                            Text(size.rawValue)
+                                                .font(.system(size: 32))
+                                                .frame(maxWidth: .infinity)
+                                                .padding(.vertical, 20)
+                                                .background(glyphRainSizeRaw == size.rawValue ? Color.blue : Color.gray.opacity(0.3))
+                                                .cornerRadius(8)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                            }
                         }
 
                         Divider().background(Color.white.opacity(0.3))
@@ -794,6 +841,28 @@ enum MusicStationOption: String, CaseIterable {
     }
 }
 
+enum GlyphRainSize: String, CaseIterable {
+    case small = "Small"
+    case medium = "Medium"
+    case large = "Large"
+
+    var fontSizeRange: ClosedRange<CGFloat> {
+        switch self {
+        case .small: return 10...16
+        case .medium: return 14...24
+        case .large: return 22...36
+        }
+    }
+
+    var columnSpacing: CGFloat {
+        switch self {
+        case .small: return 16
+        case .medium: return 22
+        case .large: return 32
+        }
+    }
+}
+
 enum ColorSchemeOption: String, CaseIterable {
     case randomRGB = "Random RGB (Each Square)"
     case matrixColors = "Matrix Colors (Per Matrix)"
@@ -830,6 +899,7 @@ struct TextTargetKey: PreferenceKey {
 struct GlyphRainView: View {
     let colorScheme: ColorSchemeOption
     var textTargets: [TextTarget] = []
+    var rainSize: GlyphRainSize = .medium
     @State private var columns: [RainColumn] = []
     let timer = Timer.publish(every: 0.08, on: .main, in: .common).autoconnect()
 
@@ -877,9 +947,9 @@ struct GlyphRainView: View {
     }
 
     func initializeColumns(width: CGFloat, height: CGFloat) {
-        let columnCount = Int(width / 22)
+        let columnCount = Int(width / rainSize.columnSpacing)
         columns = (0..<columnCount).map { i in
-            let fontSize: CGFloat = CGFloat.random(in: 14...24)
+            let fontSize: CGFloat = CGFloat.random(in: rainSize.fontSizeRange)
             let x = CGFloat(i) * (width / CGFloat(columnCount)) + CGFloat.random(in: -5...5)
             let trailLength = Int.random(in: 8...25)
             let speed: CGFloat = CGFloat.random(in: 3...10)
@@ -930,6 +1000,7 @@ struct GlyphRainView: View {
             if columns[i].y - totalHeight > height {
                 columns[i].y = -totalHeight - CGFloat.random(in: 0...300)
                 columns[i].speed = CGFloat.random(in: 3...10)
+                columns[i].fontSize = CGFloat.random(in: rainSize.fontSizeRange)
                 columns[i].trailLength = Int.random(in: 8...25)
                 columns[i].glyphs = (0..<columns[i].trailLength).map { _ in randomGlyph() }
                 columns[i].columnColor = randomColumnColor()
