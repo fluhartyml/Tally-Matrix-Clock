@@ -10,6 +10,7 @@ import Combine
 import WeatherKit
 import CoreLocation
 import MusicKit
+import MediaPlayer
 
 struct ContentView: View {
     @State private var currentTime = Date()
@@ -196,6 +197,7 @@ struct ContentView: View {
         .focused($isFocused)
         .onAppear {
             isFocused = true
+            UIApplication.shared.isIdleTimerDisabled = true
             updatePatterns()
             lastPatternChange = Date()
             fetchWeather()
@@ -268,6 +270,11 @@ struct ContentView: View {
 
             // Refresh weather periodically
             fetchWeather()
+
+            // Keep suppressing Now Playing overlay (re-override after track changes)
+            if backgroundMusic {
+                suppressNowPlayingOverlay()
+            }
         }
         .onTapGesture {
             let player = ApplicationMusicPlayer.shared
@@ -366,7 +373,10 @@ struct ContentView: View {
                     let player = ApplicationMusicPlayer.shared
                     player.queue = [station]
                     try await player.play()
-                    await MainActor.run { nowPlayingTitle = station.name }
+                    await MainActor.run {
+                        nowPlayingTitle = station.name
+                        suppressNowPlayingOverlay()
+                    }
                     return
                 }
 
@@ -379,7 +389,10 @@ struct ContentView: View {
                     let player = ApplicationMusicPlayer.shared
                     player.queue = [playlist]
                     try await player.play()
-                    await MainActor.run { nowPlayingTitle = playlist.name }
+                    await MainActor.run {
+                        nowPlayingTitle = playlist.name
+                        suppressNowPlayingOverlay()
+                    }
                 } else {
                     await MainActor.run { nowPlayingTitle = "No results found" }
                 }
@@ -393,6 +406,12 @@ struct ContentView: View {
         let player = ApplicationMusicPlayer.shared
         player.stop()
         nowPlayingTitle = ""
+    }
+
+    func suppressNowPlayingOverlay() {
+        var nowPlayingInfo = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [:]
+        nowPlayingInfo[MPNowPlayingInfoPropertyMediaType] = MPNowPlayingInfoMediaType.video.rawValue
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
     }
 
     func fetchWeather() {
