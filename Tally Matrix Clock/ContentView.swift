@@ -731,24 +731,6 @@ struct SettingsView: View {
                                     .labelsHidden()
                             }
 
-                            Button {
-                                let player = ApplicationMusicPlayer.shared
-                                player.stop()
-                            } label: {
-                                HStack {
-                                    Image(systemName: "stop.fill")
-                                        .font(.system(size: 24))
-                                    Text("Stop Music")
-                                        .font(.system(size: 30))
-                                }
-                                .foregroundColor(.white)
-                                .padding(.vertical, 12)
-                                .padding(.horizontal, 24)
-                                .background(Color.red.opacity(0.6))
-                                .cornerRadius(8)
-                            }
-                            .buttonStyle(.plain)
-
                             VStack(alignment: .leading, spacing: 20) {
                                 Text("Station")
                                     .font(.system(size: 36))
