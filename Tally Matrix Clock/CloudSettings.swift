@@ -44,6 +44,10 @@ class CloudSettings: ObservableObject {
     @Published var leaderDeviceName: String { didSet { syncToCloud() } }
     @Published var isLeader: Bool = false
 
+    // Remote commands — any device can request, leader executes
+    @Published var pauseRequested: Bool { didSet { if !initializing { pushRemoteCommand() } } }
+    @Published var skipRequested: Bool { didSet { if !initializing { pushRemoteCommand() } } }
+
     // Unique per-device ID (persists across launches, unique per Apple TV)
     let deviceID: String = {
         let key = "tallyMatrixDeviceID"
@@ -74,6 +78,8 @@ class CloudSettings: ObservableObject {
         colorSchemeRaw = local.string(forKey: "colorSchemeRaw") ?? ColorSchemeOption.randomRGB.rawValue
         patternInterval = local.object(forKey: "patternInterval") as? Double ?? 60.0
         leaderDeviceName = local.string(forKey: "leaderDeviceName") ?? ""
+        pauseRequested = false  // Never persist — always starts fresh
+        skipRequested = false
 
         // Don't trust local cache for leadership — CloudKit is the authority
         // Start as non-leader; pullFromCloud will promote us if we're actually leader
@@ -176,6 +182,8 @@ class CloudSettings: ObservableObject {
             leaderDeviceName = v
             isLeader = !v.isEmpty && v == deviceName
         }
+        if let v = record["pauseRequested"] as? Bool { pauseRequested = v }
+        if let v = record["skipRequested"] as? Bool { skipRequested = v }
 
         initializing = false
         saveLocally()
@@ -205,6 +213,26 @@ class CloudSettings: ObservableObject {
     }
 
     // MARK: - Leader Controls
+
+    // Any device (leader or follower) can push remote commands
+    private func pushRemoteCommand() {
+        lastPushTime = Date()
+        container.publicCloudDatabase.fetch(withRecordID: recordID) { [weak self] record, error in
+            guard let self = self, let record = record else { return }
+            record["pauseRequested"] = self.pauseRequested as CKRecordValue
+            record["skipRequested"] = self.skipRequested as CKRecordValue
+            let operation = CKModifyRecordsOperation(recordsToSave: [record])
+            operation.savePolicy = .changedKeys
+            operation.modifyRecordsResultBlock = { result in
+                if case .failure(let error) = result {
+                    print("CloudKit remote command error: \(error.localizedDescription)")
+                } else {
+                    print("CloudKit: Remote command pushed (pause=\(self.pauseRequested), skip=\(self.skipRequested))")
+                }
+            }
+            self.container.publicCloudDatabase.add(operation)
+        }
+    }
 
     func setAsLeader() {
         isLeader = true

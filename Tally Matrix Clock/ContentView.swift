@@ -354,7 +354,10 @@ struct ContentView: View {
             }
         }
         .onTapGesture {
-            if settings.backgroundMusic && ApplicationMusicPlayer.shared.state.playbackStatus == .playing {
+            if isFollower && settings.backgroundMusic {
+                // Follower: assume leader is playing, send skip
+                settings.skipRequested = true
+            } else if settings.backgroundMusic && ApplicationMusicPlayer.shared.state.playbackStatus == .playing {
                 Task { try? await ApplicationMusicPlayer.shared.skipToNextEntry() }
             } else {
                 showSettings = true
@@ -364,12 +367,35 @@ struct ContentView: View {
             showSettings = true
         }
         .onPlayPauseCommand {
-            guard !isFollower else { return }
-            let player = ApplicationMusicPlayer.shared
-            if player.state.playbackStatus == .playing {
-                player.pause()
+            if isFollower {
+                // Follower sends pause request to leader via CloudKit
+                settings.pauseRequested = true
             } else {
-                Task { try? await player.play() }
+                let player = ApplicationMusicPlayer.shared
+                if player.state.playbackStatus == .playing {
+                    player.pause()
+                } else {
+                    Task { try? await player.play() }
+                }
+            }
+        }
+        .onChange(of: settings.pauseRequested) { _, requested in
+            // Leader handles pause requests from any device
+            if requested && settings.isLeader {
+                let player = ApplicationMusicPlayer.shared
+                if player.state.playbackStatus == .playing {
+                    player.pause()
+                } else {
+                    Task { try? await player.play() }
+                }
+                settings.pauseRequested = false
+            }
+        }
+        .onChange(of: settings.skipRequested) { _, requested in
+            // Leader handles skip requests from any device
+            if requested && settings.isLeader {
+                Task { try? await ApplicationMusicPlayer.shared.skipToNextEntry() }
+                settings.skipRequested = false
             }
         }
         .onChange(of: scenePhase) { _, newPhase in
@@ -992,10 +1018,7 @@ enum MusicStationOption: String, CaseIterable {
     case none = "Off"
     case ambient = "Ambient"
     case chillout = "Chill"
-    case classical = "Classical"
-    case lofi = "Lo-Fi"
     case jazz = "Jazz"
-    case acidJazz = "Acid Jazz"
     case country = "Country"
     case electronic = "Electronic"
 
@@ -1004,10 +1027,7 @@ enum MusicStationOption: String, CaseIterable {
         case .none: return ""
         case .ambient: return "ambient relaxation"
         case .chillout: return "chill vibes"
-        case .classical: return "classical essentials"
-        case .lofi: return "lofi beats"
         case .jazz: return "jazz chill"
-        case .acidJazz: return "acid jazz"
         case .country: return "country hits"
         case .electronic: return "pure electronic"
         }
