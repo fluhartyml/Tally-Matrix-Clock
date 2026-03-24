@@ -183,12 +183,12 @@ struct ContentView: View {
                         }
                     }
 
-                    if settings.backgroundMusic && !nowPlayingTitle.isEmpty {
+                    if settings.backgroundMusic && (!nowPlayingTitle.isEmpty || isFollower) {
                         HStack(spacing: 8) {
-                            Image(systemName: "music.note")
+                            Image(systemName: isFollower ? "airplayaudio" : "music.note")
                                 .font(.system(size: 28))
                                 .foregroundColor(textColor)
-                            Text(nowPlayingTitle)
+                            Text(isFollower ? "\(MusicStationOption(rawValue: settings.musicStationRaw)?.rawValue ?? "Music") via AirPlay" : nowPlayingTitle)
                                 .font(.system(size: 30, weight: .regular))
                                 .foregroundColor(textColor)
                                 .lineLimit(1)
