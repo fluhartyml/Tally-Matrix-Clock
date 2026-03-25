@@ -20,6 +20,8 @@ struct ContentView: View {
     @State private var textTargets: [TextTarget] = []
     @State private var musicAuthorized = false
     @State private var nowPlayingTitle: String = ""
+    @State private var sleepTimerEnd: Date? = nil
+    @State private var sleepTimerRemaining: String = ""
     @State private var showEasterEgg = true
     @State private var starburstOpacity: Double = 0.0
     @State private var engineeredOpacity: Double = 0.0
@@ -192,6 +194,11 @@ struct ContentView: View {
                                 .font(.system(size: 30, weight: .regular))
                                 .foregroundColor(textColor)
                                 .lineLimit(1)
+                            if !sleepTimerRemaining.isEmpty {
+                                Text("· \(sleepTimerRemaining)")
+                                    .font(.system(size: 28, weight: .light))
+                                    .foregroundColor(textColor.opacity(0.6))
+                            }
                         }
                     }
                 }
@@ -352,6 +359,9 @@ struct ContentView: View {
             if settings.backgroundMusic && !isFollower {
                 suppressNowPlayingOverlay()
             }
+
+            // Check sleep timer countdown
+            checkSleepTimer()
         }
         .onTapGesture {
             if isFollower && settings.backgroundMusic {
@@ -425,6 +435,9 @@ struct ContentView: View {
                 }
             }
         }
+        .onChange(of: settings.sleepTimerMinutes) { _, minutes in
+            startSleepTimer(minutes: minutes)
+        }
         .sheet(isPresented: $showSettings) {
             SettingsView(settings: settings)
                 .onDisappear {
@@ -497,40 +510,48 @@ struct ContentView: View {
                 return
             }
 
+            let player = ApplicationMusicPlayer.shared
+
+            // Set repeat mode for nature/focus content
+            if musicStation.shouldRepeat {
+                player.state.repeatMode = .all
+            } else {
+                player.state.repeatMode = MusicPlayer.RepeatMode.none
+            }
+
             // Retry up to 3 times — MusicKit connection may not be ready ("ping did not pong")
             for attempt in 1...3 {
                 do {
-                    // Try stations first
-                    var stationRequest = MusicCatalogSearchRequest(term: musicStation.searchTerm, types: [Station.self])
-                    stationRequest.limit = 1
-                    let stationResponse = try await stationRequest.response()
+                    let searchType = musicStation.searchType
+                    let term = musicStation.searchTerm
 
-                    if let station = stationResponse.stations.first {
-                        let player = ApplicationMusicPlayer.shared
-                        player.queue = [station]
-                        try await player.prepareToPlay()
-                        try await player.play()
-                        await MainActor.run {
-                            nowPlayingTitle = station.name
-                            suppressNowPlayingOverlay()
+                    var resultName: String?
+
+                    switch searchType {
+                    case .stationFirst:
+                        resultName = try await playStation(term: term, player: player)
+                        if resultName == nil {
+                            resultName = try await playPlaylist(term: term, player: player)
                         }
-                        return
+
+                    case .stationOnly:
+                        resultName = try await playStation(term: term, player: player)
+
+                    case .playlistFirst:
+                        resultName = try await playPlaylist(term: term, player: player)
+                        if resultName == nil {
+                            resultName = try await playStation(term: term, player: player)
+                        }
+
+                    case .albumFirst:
+                        resultName = try await playAlbum(term: term, player: player)
+                        if resultName == nil {
+                            resultName = try await playPlaylist(term: term, player: player)
+                        }
                     }
 
-                    // Fall back to playlists
-                    var playlistRequest = MusicCatalogSearchRequest(term: musicStation.searchTerm, types: [Playlist.self])
-                    playlistRequest.limit = 1
-                    let playlistResponse = try await playlistRequest.response()
-
-                    if let playlist = playlistResponse.playlists.first {
-                        let player = ApplicationMusicPlayer.shared
-                        player.queue = [playlist]
-                        try await player.prepareToPlay()
-                        try await player.play()
-                        await MainActor.run {
-                            nowPlayingTitle = playlist.name
-                            suppressNowPlayingOverlay()
-                        }
+                    if let name = resultName {
+                        await MainActor.run { nowPlayingTitle = name; suppressNowPlayingOverlay() }
                     } else {
                         await MainActor.run { nowPlayingTitle = "No results found" }
                     }
@@ -543,6 +564,68 @@ struct ContentView: View {
                     }
                 }
             }
+        }
+    }
+
+    func playStation(term: String, player: ApplicationMusicPlayer) async throws -> String? {
+        var request = MusicCatalogSearchRequest(term: term, types: [Station.self])
+        request.limit = 1
+        let response = try await request.response()
+        guard let station = response.stations.first else { return nil }
+        player.queue = [station]
+        try await player.prepareToPlay()
+        try await player.play()
+        return station.name
+    }
+
+    func playPlaylist(term: String, player: ApplicationMusicPlayer) async throws -> String? {
+        var request = MusicCatalogSearchRequest(term: term, types: [Playlist.self])
+        request.limit = 1
+        let response = try await request.response()
+        guard let playlist = response.playlists.first else { return nil }
+        player.queue = [playlist]
+        try await player.prepareToPlay()
+        try await player.play()
+        return playlist.name
+    }
+
+    func playAlbum(term: String, player: ApplicationMusicPlayer) async throws -> String? {
+        var request = MusicCatalogSearchRequest(term: term, types: [Album.self])
+        request.limit = 1
+        let response = try await request.response()
+        guard let album = response.albums.first else { return nil }
+        player.queue = [album]
+        try await player.prepareToPlay()
+        try await player.play()
+        return album.title
+    }
+
+    func startSleepTimer(minutes: Int) {
+        if minutes == 0 {
+            sleepTimerEnd = nil
+            sleepTimerRemaining = ""
+            settings.sleepTimerMinutes = 0
+            return
+        }
+        sleepTimerEnd = Date().addingTimeInterval(Double(minutes) * 60)
+        settings.sleepTimerMinutes = minutes
+    }
+
+    func checkSleepTimer() {
+        guard let end = sleepTimerEnd else {
+            sleepTimerRemaining = ""
+            return
+        }
+        let remaining = end.timeIntervalSinceNow
+        if remaining <= 0 {
+            stopBackgroundMusic()
+            sleepTimerEnd = nil
+            sleepTimerRemaining = ""
+            settings.sleepTimerMinutes = 0
+        } else {
+            let mins = Int(remaining) / 60
+            let secs = Int(remaining) % 60
+            sleepTimerRemaining = String(format: "%d:%02d", mins, secs)
         }
     }
 
@@ -722,9 +805,76 @@ struct SquareView: View {
     }
 }
 
+struct StationCategoryPicker: View {
+    let category: StationCategory
+    let selectedStation: MusicStationOption
+    @Binding var expandedCategories: Set<StationCategory>
+    let tint: Color
+    let onSelect: (MusicStationOption) -> Void
+
+    private var isExpanded: Bool {
+        expandedCategories.contains(category)
+    }
+
+    private var categoryContainsSelection: Bool {
+        selectedStation.category == category
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    if isExpanded {
+                        expandedCategories.remove(category)
+                    } else {
+                        expandedCategories.insert(category)
+                    }
+                }
+            } label: {
+                HStack {
+                    Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 24))
+                    Text(category.rawValue)
+                        .font(.system(size: 34, weight: .semibold))
+                    if categoryContainsSelection && !isExpanded {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 22))
+                    }
+                    Spacer()
+                }
+                .foregroundColor(tint)
+                .padding(.vertical, 8)
+            }
+            .buttonStyle(.plain)
+
+            if isExpanded {
+                let stations = MusicStationOption.stations(for: category)
+                ForEach(stations, id: \.self) { opt in
+                    Button {
+                        onSelect(opt)
+                    } label: {
+                        HStack {
+                            Image(systemName: selectedStation == opt ? "checkmark.circle.fill" : "circle")
+                                .font(.system(size: 28))
+                            Text(opt.rawValue)
+                                .font(.system(size: 30))
+                            Spacer()
+                        }
+                        .foregroundColor(tint)
+                        .padding(.vertical, 6)
+                        .padding(.leading, 20)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+}
+
 struct SettingsView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var settings: CloudSettings
+    @State private var expandedCategories: Set<StationCategory> = []
 
     private var colorScheme: ColorSchemeOption {
         ColorSchemeOption(rawValue: settings.colorSchemeRaw) ?? .randomRGB
@@ -852,26 +1002,67 @@ struct SettingsView: View {
                                     .labelsHidden()
                             }
 
+                            // Off option
+                            Button {
+                                settings.musicStationRaw = MusicStationOption.none.rawValue
+                            } label: {
+                                HStack {
+                                    Image(systemName: musicStation == .none ? "checkmark.circle.fill" : "circle")
+                                        .font(.system(size: 28))
+                                    Text("Off")
+                                        .font(.system(size: 30))
+                                    Spacer()
+                                }
+                                .foregroundColor(tint)
+                                .padding(.vertical, 8)
+                            }
+                            .buttonStyle(.plain)
+
+                            // Collapsible station categories
+                            StationCategoryPicker(
+                                category: .music,
+                                selectedStation: musicStation,
+                                expandedCategories: $expandedCategories,
+                                tint: tint,
+                                onSelect: { opt in settings.musicStationRaw = opt.rawValue }
+                            )
+
+                            StationCategoryPicker(
+                                category: .nature,
+                                selectedStation: musicStation,
+                                expandedCategories: $expandedCategories,
+                                tint: tint,
+                                onSelect: { opt in settings.musicStationRaw = opt.rawValue }
+                            )
+
+                            StationCategoryPicker(
+                                category: .focus,
+                                selectedStation: musicStation,
+                                expandedCategories: $expandedCategories,
+                                tint: tint,
+                                onSelect: { opt in settings.musicStationRaw = opt.rawValue }
+                            )
+
+                            // Sleep / Session Timer
                             VStack(alignment: .leading, spacing: 20) {
-                                Text("Station")
+                                Text("Timer")
                                     .font(.system(size: 36))
                                     .foregroundColor(tint)
 
-                                ForEach(MusicStationOption.allCases, id: \.self) { opt in
-                                    Button {
-                                        settings.musicStationRaw = opt.rawValue
-                                    } label: {
-                                        HStack {
-                                            Image(systemName: musicStation == opt ? "checkmark.circle.fill" : "circle")
-                                                .font(.system(size: 28))
-                                            Text(opt.rawValue)
-                                                .font(.system(size: 30))
-                                            Spacer()
+                                HStack(spacing: 20) {
+                                    ForEach(SleepTimerOption.allCases, id: \.self) { option in
+                                        Button {
+                                            settings.sleepTimerMinutes = option.rawValue
+                                        } label: {
+                                            Text(option.displayName)
+                                                .font(.system(size: 32))
+                                                .frame(maxWidth: .infinity)
+                                                .padding(.vertical, 20)
+                                                .background(settings.sleepTimerMinutes == option.rawValue ? accentTint : Color.gray.opacity(0.3))
+                                                .cornerRadius(8)
                                         }
-                                        .foregroundColor(tint)
-                                        .padding(.vertical, 8)
+                                        .buttonStyle(.plain)
                                     }
-                                    .buttonStyle(.plain)
                                 }
                             }
                         }
@@ -1014,22 +1205,137 @@ struct IntervalButton: View {
     }
 }
 
+enum StationCategory: String, CaseIterable {
+    case music = "Music"
+    case nature = "Nature Sounds"
+    case focus = "Focus"
+}
+
 enum MusicStationOption: String, CaseIterable {
+    // Music stations
     case none = "Off"
     case ambient = "Ambient"
     case chillout = "Chill"
     case jazz = "Jazz"
     case country = "Country"
     case electronic = "Electronic"
+    case newInPop = "New in Pop"
+    case rockStation = "Rock Station"
+    case rAndBNow = "R&B Now"
+    case spatialAudio = "Hits in Spatial Audio"
+
+    // Nature sounds
+    case infiniteRain = "Infinite Rain"
+    case forestSounds = "Forest Sounds"
+    case babblingBrook = "Babbling Brook"
+    case tropicalThunderstorm = "Tropical Thunderstorm"
+    case oceanWavesThunder = "Ocean Waves & Thunder"
+    case waterfallAndRain = "Waterfall and Rain"
+    case tibetanMonksOm = "Tibetan Monks Chanting Om"
+    case tibetanSingingBowls = "Tibetan Singing Bowls"
+    case tibetanBowls4Hr = "Singing Bowls 4 Hours"
+    case rainSoundsForSleep = "Rain Sounds for Sleep"
+
+    // Focus
+    case pureFocus = "Pure Focus"
+    case focusFrequency = "Focus Frequency"
+    case calmBreathing = "432 Hz Calm Breathing"
+    case positiveShift = "432 Hz Positive Shift"
+    case lightWork = "432 Hz Light Work"
+
+    var category: StationCategory {
+        switch self {
+        case .none, .ambient, .chillout, .jazz, .country, .electronic,
+             .newInPop, .rockStation, .rAndBNow, .spatialAudio:
+            return .music
+        case .infiniteRain, .forestSounds, .babblingBrook, .tropicalThunderstorm,
+             .oceanWavesThunder, .waterfallAndRain, .tibetanMonksOm,
+             .tibetanSingingBowls, .tibetanBowls4Hr, .rainSoundsForSleep:
+            return .nature
+        case .pureFocus, .focusFrequency, .calmBreathing, .positiveShift, .lightWork:
+            return .focus
+        }
+    }
 
     var searchTerm: String {
         switch self {
         case .none: return ""
+        // Music
         case .ambient: return "ambient relaxation"
         case .chillout: return "chill vibes"
         case .jazz: return "jazz chill"
         case .country: return "country hits"
         case .electronic: return "pure electronic"
+        case .newInPop: return "new in pop"
+        case .rockStation: return "rock station"
+        case .rAndBNow: return "R&B now"
+        case .spatialAudio: return "hits in spatial audio"
+        // Nature
+        case .infiniteRain: return "infinite rain"
+        case .forestSounds: return "forest sounds apple music wellbeing"
+        case .babblingBrook: return "babbling brook nature sounds nature sound collection"
+        case .tropicalThunderstorm: return "a majestic tropical thunderstorm"
+        case .oceanWavesThunder: return "ocean waves gentle thunder and rain"
+        case .waterfallAndRain: return "healing sounds of nature waterfall and rain"
+        case .tibetanMonksOm: return "tibetan monks chanting om for deep meditation"
+        case .tibetanSingingBowls: return "tibetan singing bowls satiro"
+        case .tibetanBowls4Hr: return "tibetan singing bowls 4 hours for relaxation"
+        case .rainSoundsForSleep: return "rain sounds for sleep silent chills"
+        // Focus
+        case .pureFocus: return "pure focus"
+        case .focusFrequency: return "focus frequency increase concentration memory"
+        case .calmBreathing: return "deep meditation binaural beats vol 9 lightseeds"
+        case .positiveShift: return "deep meditation binaural beats vol 9 lightseeds"
+        case .lightWork: return "deep meditation binaural beats vol 9 lightseeds"
+        }
+    }
+
+    var searchType: StationSearchType {
+        switch self {
+        case .rockStation:
+            return .stationOnly
+        case .infiniteRain, .forestSounds, .newInPop, .rAndBNow, .spatialAudio,
+             .pureFocus, .rainSoundsForSleep:
+            return .playlistFirst
+        case .babblingBrook, .tropicalThunderstorm, .oceanWavesThunder,
+             .waterfallAndRain, .tibetanMonksOm, .tibetanSingingBowls,
+             .tibetanBowls4Hr, .focusFrequency, .calmBreathing, .positiveShift, .lightWork:
+            return .albumFirst
+        default:
+            return .stationFirst
+        }
+    }
+
+    var shouldRepeat: Bool {
+        category == .nature || category == .focus
+    }
+
+    static func stations(for category: StationCategory) -> [MusicStationOption] {
+        allCases.filter { $0.category == category && $0 != .none }
+    }
+}
+
+enum StationSearchType {
+    case stationFirst   // Try Station, fall back to Playlist
+    case stationOnly    // Station only (radio stations)
+    case playlistFirst  // Try Playlist, fall back to Station
+    case albumFirst     // Try Album, fall back to Playlist
+}
+
+enum SleepTimerOption: Int, CaseIterable {
+    case off = 0
+    case thirtyMin = 30
+    case sixtyMin = 60
+    case twoHours = 120
+    case fourHours = 240
+
+    var displayName: String {
+        switch self {
+        case .off: return "Off"
+        case .thirtyMin: return "30m"
+        case .sixtyMin: return "1h"
+        case .twoHours: return "2h"
+        case .fourHours: return "4h"
         }
     }
 }

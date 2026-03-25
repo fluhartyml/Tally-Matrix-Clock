@@ -35,6 +35,7 @@ class CloudSettings: ObservableObject {
     @Published var backgroundMusic: Bool { didSet { syncToCloud() } }
     @Published var playInBackground: Bool { didSet { syncToCloud() } }
     @Published var musicStationRaw: String { didSet { syncToCloud() } }
+    @Published var sleepTimerMinutes: Int { didSet { syncToCloud() } }
 
     // Appearance settings
     @Published var colorSchemeRaw: String { didSet { syncToCloud() } }
@@ -75,6 +76,7 @@ class CloudSettings: ObservableObject {
         backgroundMusic = local.object(forKey: "backgroundMusic") as? Bool ?? false
         playInBackground = local.object(forKey: "playInBackground") as? Bool ?? false
         musicStationRaw = local.string(forKey: "musicStationRaw") ?? MusicStationOption.none.rawValue
+        sleepTimerMinutes = local.object(forKey: "sleepTimerMinutes") as? Int ?? 0
         colorSchemeRaw = local.string(forKey: "colorSchemeRaw") ?? ColorSchemeOption.randomRGB.rawValue
         patternInterval = local.object(forKey: "patternInterval") as? Double ?? 60.0
         leaderDeviceName = local.string(forKey: "leaderDeviceName") ?? ""
@@ -114,6 +116,7 @@ class CloudSettings: ObservableObject {
         record["backgroundMusic"] = backgroundMusic as CKRecordValue
         record["playInBackground"] = playInBackground as CKRecordValue
         record["musicStationRaw"] = musicStationRaw as CKRecordValue
+        record["sleepTimerMinutes"] = sleepTimerMinutes as CKRecordValue
         record["colorSchemeRaw"] = colorSchemeRaw as CKRecordValue
         record["patternInterval"] = patternInterval as CKRecordValue
         record["leaderDeviceName"] = leaderDeviceName as CKRecordValue
@@ -168,6 +171,7 @@ class CloudSettings: ObservableObject {
         if let v = record["backgroundMusic"] as? Bool { backgroundMusic = v }
         if let v = record["playInBackground"] as? Bool { playInBackground = v }
         if let v = record["musicStationRaw"] as? String { musicStationRaw = v }
+        if let v = record["sleepTimerMinutes"] as? Int { sleepTimerMinutes = v }
         if let v = record["colorSchemeRaw"] as? String {
             if colorSchemeRaw != v {
                 print("CloudKit: Color scheme changed from \(colorSchemeRaw) to \(v)")
@@ -199,6 +203,7 @@ class CloudSettings: ObservableObject {
         local.set(backgroundMusic, forKey: "backgroundMusic")
         local.set(playInBackground, forKey: "playInBackground")
         local.set(musicStationRaw, forKey: "musicStationRaw")
+        local.set(sleepTimerMinutes, forKey: "sleepTimerMinutes")
         local.set(colorSchemeRaw, forKey: "colorSchemeRaw")
         local.set(patternInterval, forKey: "patternInterval")
         local.set(leaderDeviceName, forKey: "leaderDeviceName")
