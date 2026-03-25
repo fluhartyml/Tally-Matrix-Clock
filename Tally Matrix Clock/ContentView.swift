@@ -131,8 +131,7 @@ struct ContentView: View {
                 
                 Spacer()
                 
-                HStack(alignment: .top, spacing: 20) {
-                    Spacer()
+                HStack(alignment: .top, spacing: 24) {
 
                     // Right-aligned text info
                     VStack(alignment: .trailing, spacing: 12) {
@@ -212,42 +211,38 @@ struct ContentView: View {
 
                     // Album art + song info
                     if settings.backgroundMusic && currentArtworkURL != nil {
-                        VStack(spacing: 8) {
+                        VStack(spacing: 10) {
                             AsyncImage(url: currentArtworkURL) { phase in
                                 switch phase {
                                 case .success(let image):
                                     image
                                         .resizable()
                                         .aspectRatio(contentMode: .fill)
-                                        .frame(width: 120, height: 120)
-                                        .cornerRadius(8)
+                                        .cornerRadius(10)
                                         .colorMultiply(colorScheme == .crimson ? Color(red: 0.6, green: 0.0, blue: 0.05) : .white)
                                 default:
-                                    RoundedRectangle(cornerRadius: 8)
+                                    RoundedRectangle(cornerRadius: 10)
                                         .fill(Color.gray.opacity(0.2))
-                                        .frame(width: 120, height: 120)
                                 }
                             }
 
                             if !currentSongTitle.isEmpty {
                                 Text(currentSongTitle)
-                                    .font(.system(size: 22, weight: .medium))
+                                    .font(.system(size: 40, weight: .medium))
                                     .foregroundColor(textColor)
                                     .lineLimit(1)
-                                    .frame(width: 120)
                             }
 
                             if !currentArtistName.isEmpty {
                                 Text(currentArtistName)
-                                    .font(.system(size: 18, weight: .regular))
+                                    .font(.system(size: 34, weight: .regular))
                                     .foregroundColor(textColor.opacity(0.7))
                                     .lineLimit(1)
-                                    .frame(width: 120)
                             }
                         }
+                        .frame(width: 200)
                     }
                 }
-                .padding(.trailing, 60)
 
                 Spacer().frame(height: 60)
             }
