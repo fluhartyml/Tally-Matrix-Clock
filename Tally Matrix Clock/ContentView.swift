@@ -1161,6 +1161,17 @@ struct SettingsView: View {
                             )
 
                             StationCategoryPicker(
+                                category: .billboard,
+                                selectedStation: musicStation,
+                                expandedCategories: $expandedCategories,
+                                tint: tint,
+                                onSelect: { opt in
+                                    if isFollower { settings.requestedStation = opt.rawValue }
+                                    else { settings.musicStationRaw = opt.rawValue }
+                                }
+                            )
+
+                            StationCategoryPicker(
                                 category: .nature,
                                 selectedStation: musicStation,
                                 expandedCategories: $expandedCategories,
@@ -1354,6 +1365,7 @@ struct IntervalButton: View {
 
 enum StationCategory: String, CaseIterable {
     case music = "Music"
+    case billboard = "Billboard"
     case nature = "Nature Sounds"
     case focus = "Focus"
 }
@@ -1370,6 +1382,22 @@ enum MusicStationOption: String, CaseIterable {
     case rockStation = "Rock Station"
     case rAndBNow = "R&B Now"
     case spatialAudio = "Hits in Spatial Audio"
+
+    // Billboard
+    case top100USA = "Top 100: USA"
+    case billboard1952 = "1952"
+    case billboard1953 = "1953"
+    case billboard1966 = "1966"
+    case billboard1971 = "1971"
+    case billboard1975 = "1975"
+    case billboard1979 = "1979"
+    case billboard1981 = "1981"
+    case billboard1989 = "1989"
+    case billboard1994 = "1994"
+    case billboard1996 = "1996"
+    case billboard2007 = "2007"
+    case billboard2012 = "2012"
+    case billboard2023 = "2023"
 
     // Nature sounds
     case infiniteRain = "Infinite Rain"
@@ -1395,6 +1423,11 @@ enum MusicStationOption: String, CaseIterable {
         case .none, .ambient, .chillout, .jazz, .country, .electronic,
              .newInPop, .rockStation, .rAndBNow, .spatialAudio:
             return .music
+        case .top100USA, .billboard1952, .billboard1953, .billboard1966,
+             .billboard1971, .billboard1975, .billboard1979, .billboard1981,
+             .billboard1989, .billboard1994, .billboard1996, .billboard2007,
+             .billboard2012, .billboard2023:
+            return .billboard
         case .infiniteRain, .forestSounds, .babblingBrook, .tropicalThunderstorm,
              .oceanWavesThunder, .waterfallAndRain, .tibetanMonksOm,
              .tibetanSingingBowls, .tibetanBowls4Hr, .rainSoundsForSleep:
@@ -1417,6 +1450,21 @@ enum MusicStationOption: String, CaseIterable {
         case .rockStation: return "rock station"
         case .rAndBNow: return "R&B now"
         case .spatialAudio: return "hits in spatial audio"
+        // Billboard
+        case .top100USA: return "top 100 usa"
+        case .billboard1952: return "1952 billboard top 40 kayla crespo"
+        case .billboard1953: return "1953 billboard top 40 kayla crespo"
+        case .billboard1966: return "1966 billboard top 40 kayla crespo"
+        case .billboard1971: return "1971 billboard top 40 kayla crespo"
+        case .billboard1975: return "1975 billboard top 40 kayla crespo"
+        case .billboard1979: return "1979 billboard top 40 kayla crespo"
+        case .billboard1981: return "1981 billboard top 40 kayla crespo"
+        case .billboard1989: return "1989 billboard top 40 kayla crespo"
+        case .billboard1994: return "1994 billboard top 40 kayla crespo"
+        case .billboard1996: return "1996 billboard top 40 kayla crespo"
+        case .billboard2007: return "2007 billboard top 40 kayla crespo"
+        case .billboard2012: return "2012 billboard top 40 kayla crespo"
+        case .billboard2023: return "billboard top 40 2023"
         // Nature
         case .infiniteRain: return "infinite rain"
         case .forestSounds: return "forest sounds apple music wellbeing"
@@ -1442,7 +1490,11 @@ enum MusicStationOption: String, CaseIterable {
         case .rockStation:
             return .stationOnly
         case .infiniteRain, .forestSounds, .newInPop, .rAndBNow, .spatialAudio,
-             .pureFocus, .rainSoundsForSleep:
+             .pureFocus, .rainSoundsForSleep,
+             .top100USA, .billboard1952, .billboard1953, .billboard1966,
+             .billboard1971, .billboard1975, .billboard1979, .billboard1981,
+             .billboard1989, .billboard1994, .billboard1996, .billboard2007,
+             .billboard2012, .billboard2023:
             return .playlistFirst
         case .babblingBrook, .tropicalThunderstorm, .oceanWavesThunder,
              .waterfallAndRain, .tibetanMonksOm, .tibetanSingingBowls,
