@@ -53,7 +53,8 @@ class CloudSettings: ObservableObject {
 
     /// Followers call this to request any setting change from the leader
     func requestSettingChange(key: String, value: Any) {
-        let dict: [String: Any] = ["key": key, "value": value]
+        // Include a timestamp so repeated requests for the same value still trigger onChange
+        let dict: [String: Any] = ["key": key, "value": value, "ts": Date().timeIntervalSince1970]
         if let data = try? JSONSerialization.data(withJSONObject: dict),
            let json = String(data: data, encoding: .utf8) {
             requestedSettings = json
