@@ -48,6 +48,7 @@ class CloudSettings: ObservableObject {
     // Remote commands — any device can request, leader executes
     @Published var pauseRequested: Bool { didSet { if !initializing { pushRemoteCommand() } } }
     @Published var skipRequested: Bool { didSet { if !initializing { pushRemoteCommand() } } }
+    @Published var requestedStation: String { didSet { if !initializing { pushRemoteCommand() } } }
 
     // Unique per-device ID (persists across launches, unique per Apple TV)
     let deviceID: String = {
@@ -82,6 +83,7 @@ class CloudSettings: ObservableObject {
         leaderDeviceName = local.string(forKey: "leaderDeviceName") ?? ""
         pauseRequested = false  // Never persist — always starts fresh
         skipRequested = false
+        requestedStation = ""  // Never persist — always starts fresh
 
         // Don't trust local cache for leadership — CloudKit is the authority
         // Start as non-leader; pullFromCloud will promote us if we're actually leader
@@ -188,6 +190,7 @@ class CloudSettings: ObservableObject {
         }
         if let v = record["pauseRequested"] as? Bool { pauseRequested = v }
         if let v = record["skipRequested"] as? Bool { skipRequested = v }
+        if let v = record["requestedStation"] as? String { requestedStation = v }
 
         initializing = false
         saveLocally()
@@ -226,6 +229,7 @@ class CloudSettings: ObservableObject {
             guard let self = self, let record = record else { return }
             record["pauseRequested"] = self.pauseRequested as CKRecordValue
             record["skipRequested"] = self.skipRequested as CKRecordValue
+            record["requestedStation"] = self.requestedStation as CKRecordValue
             let operation = CKModifyRecordsOperation(recordsToSave: [record])
             operation.savePolicy = .changedKeys
             operation.modifyRecordsResultBlock = { result in

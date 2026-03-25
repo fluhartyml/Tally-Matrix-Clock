@@ -22,6 +22,9 @@ struct ContentView: View {
     @State private var nowPlayingTitle: String = ""
     @State private var sleepTimerEnd: Date? = nil
     @State private var sleepTimerRemaining: String = ""
+    @State private var currentSongTitle: String = ""
+    @State private var currentArtistName: String = ""
+    @State private var currentArtworkURL: URL? = nil
     @State private var showEasterEgg = true
     @State private var starburstOpacity: Double = 0.0
     @State private var engineeredOpacity: Double = 0.0
@@ -128,82 +131,125 @@ struct ContentView: View {
                 
                 Spacer()
                 
-                VStack(spacing: 16) {
-                    if settings.showBase10 {
-                        Text(baseTimeString)
-                            .font(.system(size: 60, weight: .thin, design: .monospaced))
-                            .foregroundColor(textColor)
-                            .background(
-                                GeometryReader { geo in
-                                    Color.clear.preference(key: TextTargetKey.self, value: [
-                                        TextTarget(text: baseTimeString, frame: geo.frame(in: .global), fontSize: 60, isMonospaced: true)
-                                    ])
-                                }
-                            )
-                    }
+                HStack(alignment: .top, spacing: 20) {
+                    Spacer()
 
-                    if settings.showDate {
-                        Text(dateString)
-                            .font(.system(size: 44, weight: .regular))
-                            .foregroundColor(textColor)
-                            .background(
-                                GeometryReader { geo in
-                                    Color.clear.preference(key: TextTargetKey.self, value: [
-                                        TextTarget(text: dateString, frame: geo.frame(in: .global), fontSize: 40, isMonospaced: false)
-                                    ])
-                                }
-                            )
-                    }
-
-                    if settings.showWeather && !weatherTemp.isEmpty {
-                        HStack(spacing: 12) {
-                            if !weatherSymbol.isEmpty {
-                                Image(systemName: weatherSymbol)
-                                    .font(.system(size: 40))
-                                    .foregroundColor(textColor)
-                            }
-                            Text(weatherTemp)
-                                .font(.system(size: 44, weight: .regular, design: .monospaced))
+                    // Right-aligned text info
+                    VStack(alignment: .trailing, spacing: 12) {
+                        if settings.showBase10 {
+                            Text(baseTimeString)
+                                .font(.system(size: 60, weight: .thin, design: .monospaced))
                                 .foregroundColor(textColor)
                                 .background(
                                     GeometryReader { geo in
                                         Color.clear.preference(key: TextTargetKey.self, value: [
-                                            TextTarget(text: weatherTemp, frame: geo.frame(in: .global), fontSize: 40, isMonospaced: true)
-                                        ])
-                                    }
-                                )
-                            Text(weatherCondition)
-                                .font(.system(size: 40, weight: .regular))
-                                .foregroundColor(textColor)
-                                .background(
-                                    GeometryReader { geo in
-                                        Color.clear.preference(key: TextTargetKey.self, value: [
-                                            TextTarget(text: weatherCondition, frame: geo.frame(in: .global), fontSize: 36, isMonospaced: false)
+                                            TextTarget(text: baseTimeString, frame: geo.frame(in: .global), fontSize: 60, isMonospaced: true)
                                         ])
                                     }
                                 )
                         }
+
+                        if settings.showDate {
+                            Text(dateString)
+                                .font(.system(size: 44, weight: .regular))
+                                .foregroundColor(textColor)
+                                .background(
+                                    GeometryReader { geo in
+                                        Color.clear.preference(key: TextTargetKey.self, value: [
+                                            TextTarget(text: dateString, frame: geo.frame(in: .global), fontSize: 40, isMonospaced: false)
+                                        ])
+                                    }
+                                )
+                        }
+
+                        if settings.showWeather && !weatherTemp.isEmpty {
+                            HStack(spacing: 12) {
+                                if !weatherSymbol.isEmpty {
+                                    Image(systemName: weatherSymbol)
+                                        .font(.system(size: 40))
+                                        .foregroundColor(textColor)
+                                }
+                                Text(weatherTemp)
+                                    .font(.system(size: 44, weight: .regular, design: .monospaced))
+                                    .foregroundColor(textColor)
+                                    .background(
+                                        GeometryReader { geo in
+                                            Color.clear.preference(key: TextTargetKey.self, value: [
+                                                TextTarget(text: weatherTemp, frame: geo.frame(in: .global), fontSize: 40, isMonospaced: true)
+                                            ])
+                                        }
+                                    )
+                                Text(weatherCondition)
+                                    .font(.system(size: 40, weight: .regular))
+                                    .foregroundColor(textColor)
+                                    .background(
+                                        GeometryReader { geo in
+                                            Color.clear.preference(key: TextTargetKey.self, value: [
+                                                TextTarget(text: weatherCondition, frame: geo.frame(in: .global), fontSize: 36, isMonospaced: false)
+                                            ])
+                                        }
+                                    )
+                            }
+                        }
+
+                        if settings.backgroundMusic && (!nowPlayingTitle.isEmpty || isFollower) {
+                            HStack(spacing: 8) {
+                                Image(systemName: isFollower ? "airplayaudio" : "music.note")
+                                    .font(.system(size: 28))
+                                    .foregroundColor(textColor)
+                                Text(isFollower ? "\(MusicStationOption(rawValue: settings.musicStationRaw)?.rawValue ?? "Music") via AirPlay" : nowPlayingTitle)
+                                    .font(.system(size: 30, weight: .regular))
+                                    .foregroundColor(textColor)
+                                    .lineLimit(1)
+                                if !sleepTimerRemaining.isEmpty {
+                                    Text("· \(sleepTimerRemaining)")
+                                        .font(.system(size: 28, weight: .light))
+                                        .foregroundColor(textColor.opacity(0.6))
+                                }
+                            }
+                        }
                     }
 
-                    if settings.backgroundMusic && (!nowPlayingTitle.isEmpty || isFollower) {
-                        HStack(spacing: 8) {
-                            Image(systemName: isFollower ? "airplayaudio" : "music.note")
-                                .font(.system(size: 28))
-                                .foregroundColor(textColor)
-                            Text(isFollower ? "\(MusicStationOption(rawValue: settings.musicStationRaw)?.rawValue ?? "Music") via AirPlay" : nowPlayingTitle)
-                                .font(.system(size: 30, weight: .regular))
-                                .foregroundColor(textColor)
-                                .lineLimit(1)
-                            if !sleepTimerRemaining.isEmpty {
-                                Text("· \(sleepTimerRemaining)")
-                                    .font(.system(size: 28, weight: .light))
-                                    .foregroundColor(textColor.opacity(0.6))
+                    // Album art + song info
+                    if settings.backgroundMusic && currentArtworkURL != nil {
+                        VStack(spacing: 8) {
+                            AsyncImage(url: currentArtworkURL) { phase in
+                                switch phase {
+                                case .success(let image):
+                                    image
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(width: 120, height: 120)
+                                        .cornerRadius(8)
+                                        .colorMultiply(colorScheme == .crimson ? Color(red: 0.6, green: 0.0, blue: 0.05) : .white)
+                                default:
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.gray.opacity(0.2))
+                                        .frame(width: 120, height: 120)
+                                }
+                            }
+
+                            if !currentSongTitle.isEmpty {
+                                Text(currentSongTitle)
+                                    .font(.system(size: 22, weight: .medium))
+                                    .foregroundColor(textColor)
+                                    .lineLimit(1)
+                                    .frame(width: 120)
+                            }
+
+                            if !currentArtistName.isEmpty {
+                                Text(currentArtistName)
+                                    .font(.system(size: 18, weight: .regular))
+                                    .foregroundColor(textColor.opacity(0.7))
+                                    .lineLimit(1)
+                                    .frame(width: 120)
                             }
                         }
                     }
                 }
+                .padding(.trailing, 60)
 
-                Spacer().frame(height: 100)
+                Spacer().frame(height: 60)
             }
             .opacity(clockOpacity)
 
@@ -362,6 +408,9 @@ struct ContentView: View {
 
             // Check sleep timer countdown
             checkSleepTimer()
+
+            // Update now playing metadata for album art display
+            updateNowPlayingInfo()
         }
         .onTapGesture {
             if isFollower && settings.backgroundMusic {
@@ -406,6 +455,14 @@ struct ContentView: View {
             if requested && settings.isLeader {
                 Task { try? await ApplicationMusicPlayer.shared.skipToNextEntry() }
                 settings.skipRequested = false
+            }
+        }
+        .onChange(of: settings.requestedStation) { _, station in
+            // Leader handles station change requests from followers
+            if !station.isEmpty && settings.isLeader {
+                settings.musicStationRaw = station
+                settings.requestedStation = ""
+                startBackgroundMusic()
             }
         }
         .onChange(of: scenePhase) { _, newPhase in
@@ -635,6 +692,34 @@ struct ContentView: View {
             player.stop()
         }
         nowPlayingTitle = ""
+        currentSongTitle = ""
+        currentArtistName = ""
+        currentArtworkURL = nil
+    }
+
+    func updateNowPlayingInfo() {
+        let player = ApplicationMusicPlayer.shared
+        guard player.state.playbackStatus == .playing else {
+            if player.state.playbackStatus != .paused {
+                currentSongTitle = ""
+                currentArtistName = ""
+                currentArtworkURL = nil
+            }
+            return
+        }
+        if let entry = player.queue.currentEntry {
+            let title = entry.title ?? ""
+            let artist = entry.subtitle ?? ""
+            if title != currentSongTitle || artist != currentArtistName {
+                currentSongTitle = title
+                currentArtistName = artist
+                if let artwork = entry.artwork {
+                    currentArtworkURL = artwork.url(width: 240, height: 240)
+                } else {
+                    currentArtworkURL = nil
+                }
+            }
+        }
     }
 
     func suppressNowPlayingOverlay() {
@@ -884,6 +969,10 @@ struct SettingsView: View {
         MusicStationOption(rawValue: settings.musicStationRaw) ?? .none
     }
 
+    private var isFollower: Bool {
+        !settings.leaderDeviceName.isEmpty && !settings.isLeader
+    }
+
     private var isCrimson: Bool {
         colorScheme == .crimson
     }
@@ -1004,7 +1093,11 @@ struct SettingsView: View {
 
                             // Off option
                             Button {
-                                settings.musicStationRaw = MusicStationOption.none.rawValue
+                                if isFollower {
+                                    settings.requestedStation = MusicStationOption.none.rawValue
+                                } else {
+                                    settings.musicStationRaw = MusicStationOption.none.rawValue
+                                }
                             } label: {
                                 HStack {
                                     Image(systemName: musicStation == .none ? "checkmark.circle.fill" : "circle")
@@ -1024,7 +1117,10 @@ struct SettingsView: View {
                                 selectedStation: musicStation,
                                 expandedCategories: $expandedCategories,
                                 tint: tint,
-                                onSelect: { opt in settings.musicStationRaw = opt.rawValue }
+                                onSelect: { opt in
+                                    if isFollower { settings.requestedStation = opt.rawValue }
+                                    else { settings.musicStationRaw = opt.rawValue }
+                                }
                             )
 
                             StationCategoryPicker(
@@ -1032,7 +1128,10 @@ struct SettingsView: View {
                                 selectedStation: musicStation,
                                 expandedCategories: $expandedCategories,
                                 tint: tint,
-                                onSelect: { opt in settings.musicStationRaw = opt.rawValue }
+                                onSelect: { opt in
+                                    if isFollower { settings.requestedStation = opt.rawValue }
+                                    else { settings.musicStationRaw = opt.rawValue }
+                                }
                             )
 
                             StationCategoryPicker(
@@ -1040,7 +1139,10 @@ struct SettingsView: View {
                                 selectedStation: musicStation,
                                 expandedCategories: $expandedCategories,
                                 tint: tint,
-                                onSelect: { opt in settings.musicStationRaw = opt.rawValue }
+                                onSelect: { opt in
+                                    if isFollower { settings.requestedStation = opt.rawValue }
+                                    else { settings.musicStationRaw = opt.rawValue }
+                                }
                             )
 
                             // Sleep / Session Timer
