@@ -211,36 +211,39 @@ struct ContentView: View {
 
                     // Album art + song info
                     if settings.backgroundMusic && currentArtworkURL != nil {
-                        VStack(spacing: 10) {
+                        VStack(alignment: .leading, spacing: 6) {
                             AsyncImage(url: currentArtworkURL) { phase in
                                 switch phase {
                                 case .success(let image):
                                     image
                                         .resizable()
                                         .aspectRatio(contentMode: .fill)
+                                        .frame(width: 140, height: 140)
                                         .cornerRadius(10)
                                         .colorMultiply(colorScheme == .crimson ? Color(red: 0.6, green: 0.0, blue: 0.05) : .white)
                                 default:
                                     RoundedRectangle(cornerRadius: 10)
                                         .fill(Color.gray.opacity(0.2))
+                                        .frame(width: 140, height: 140)
                                 }
                             }
 
                             if !currentSongTitle.isEmpty {
                                 Text(currentSongTitle)
-                                    .font(.system(size: 40, weight: .medium))
+                                    .font(.system(size: 36, weight: .medium))
                                     .foregroundColor(textColor)
-                                    .lineLimit(1)
+                                    .lineLimit(2)
+                                    .frame(maxWidth: 300, alignment: .leading)
                             }
 
                             if !currentArtistName.isEmpty {
                                 Text(currentArtistName)
-                                    .font(.system(size: 34, weight: .regular))
+                                    .font(.system(size: 30, weight: .regular))
                                     .foregroundColor(textColor.opacity(0.7))
                                     .lineLimit(1)
+                                    .frame(maxWidth: 300, alignment: .leading)
                             }
                         }
-                        .frame(width: 200)
                     }
                 }
 
@@ -457,6 +460,14 @@ struct ContentView: View {
             if !station.isEmpty && settings.isLeader {
                 settings.musicStationRaw = station
                 settings.requestedStation = ""
+                startBackgroundMusic()
+            }
+        }
+        .onChange(of: settings.requestedSettings) { _, json in
+            // Leader handles any setting change requests from followers
+            if !json.isEmpty && settings.isLeader {
+                settings.applyRequestedSettings()
+                // Restart music if station changed via generic request
                 startBackgroundMusic()
             }
         }
@@ -968,6 +979,33 @@ struct SettingsView: View {
         !settings.leaderDeviceName.isEmpty && !settings.isLeader
     }
 
+    /// Creates a binding that routes through requestSettingChange for followers
+    private func followerBinding(for keyPath: ReferenceWritableKeyPath<CloudSettings, Bool>, key: String) -> Binding<Bool> {
+        Binding(
+            get: { settings[keyPath: keyPath] },
+            set: { newValue in
+                if isFollower {
+                    settings.requestSettingChange(key: key, value: newValue)
+                } else {
+                    settings[keyPath: keyPath] = newValue
+                }
+            }
+        )
+    }
+
+    private func followerDoubleBinding(for keyPath: ReferenceWritableKeyPath<CloudSettings, Double>, key: String) -> Binding<Double> {
+        Binding(
+            get: { settings[keyPath: keyPath] },
+            set: { newValue in
+                if isFollower {
+                    settings.requestSettingChange(key: key, value: newValue)
+                } else {
+                    settings[keyPath: keyPath] = newValue
+                }
+            }
+        )
+    }
+
     private var isCrimson: Bool {
         colorScheme == .crimson
     }
@@ -1001,7 +1039,7 @@ struct SettingsView: View {
                                 .font(.system(size: 36))
                                 .foregroundColor(tint)
                             Spacer()
-                            Toggle("", isOn: $settings.showBase10)
+                            Toggle("", isOn: followerBinding(for: \.showBase10, key: "showBase10"))
                                 .labelsHidden()
                         }
 
@@ -1010,7 +1048,7 @@ struct SettingsView: View {
                                 .font(.system(size: 36))
                                 .foregroundColor(tint)
                             Spacer()
-                            Toggle("", isOn: $settings.use24Hour)
+                            Toggle("", isOn: followerBinding(for: \.use24Hour, key: "use24Hour"))
                                 .labelsHidden()
                         }
 
@@ -1019,7 +1057,7 @@ struct SettingsView: View {
                                 .font(.system(size: 36))
                                 .foregroundColor(tint)
                             Spacer()
-                            Toggle("", isOn: $settings.showDate)
+                            Toggle("", isOn: followerBinding(for: \.showDate, key: "showDate"))
                                 .labelsHidden()
                         }
 
@@ -1028,7 +1066,7 @@ struct SettingsView: View {
                                 .font(.system(size: 36))
                                 .foregroundColor(tint)
                             Spacer()
-                            Toggle("", isOn: $settings.showWeather)
+                            Toggle("", isOn: followerBinding(for: \.showWeather, key: "showWeather"))
                                 .labelsHidden()
                         }
 
@@ -1037,7 +1075,7 @@ struct SettingsView: View {
                                 .font(.system(size: 36))
                                 .foregroundColor(tint)
                             Spacer()
-                            Toggle("", isOn: $settings.showGlyphRain)
+                            Toggle("", isOn: followerBinding(for: \.showGlyphRain, key: "showGlyphRain"))
                                 .labelsHidden()
                         }
 
@@ -1050,7 +1088,11 @@ struct SettingsView: View {
                                 HStack(spacing: 20) {
                                     ForEach(GlyphRainSize.allCases, id: \.self) { size in
                                         Button {
-                                            settings.glyphRainSizeRaw = size.rawValue
+                                            if isFollower {
+                                                settings.requestSettingChange(key: "glyphRainSizeRaw", value: size.rawValue)
+                                            } else {
+                                                settings.glyphRainSizeRaw = size.rawValue
+                                            }
                                         } label: {
                                             Text(size.rawValue)
                                                 .font(.system(size: 32))
@@ -1072,7 +1114,7 @@ struct SettingsView: View {
                                 .font(.system(size: 36))
                                 .foregroundColor(tint)
                             Spacer()
-                            Toggle("", isOn: $settings.backgroundMusic)
+                            Toggle("", isOn: followerBinding(for: \.backgroundMusic, key: "backgroundMusic"))
                                 .labelsHidden()
                         }
 
@@ -1082,7 +1124,7 @@ struct SettingsView: View {
                                     .font(.system(size: 36))
                                     .foregroundColor(tint)
                                 Spacer()
-                                Toggle("", isOn: $settings.playInBackground)
+                                Toggle("", isOn: followerBinding(for: \.playInBackground, key: "playInBackground"))
                                     .labelsHidden()
                             }
 
@@ -1149,7 +1191,11 @@ struct SettingsView: View {
                                 HStack(spacing: 20) {
                                     ForEach(SleepTimerOption.allCases, id: \.self) { option in
                                         Button {
-                                            settings.sleepTimerMinutes = option.rawValue
+                                            if isFollower {
+                                                settings.requestSettingChange(key: "sleepTimerMinutes", value: option.rawValue)
+                                            } else {
+                                                settings.sleepTimerMinutes = option.rawValue
+                                            }
                                         } label: {
                                             Text(option.displayName)
                                                 .font(.system(size: 32))
@@ -1173,7 +1219,11 @@ struct SettingsView: View {
 
                             ForEach(ColorSchemeOption.allCases, id: \.self) { opt in
                                 Button {
-                                    settings.colorSchemeRaw = opt.rawValue
+                                    if isFollower {
+                                        settings.requestSettingChange(key: "colorSchemeRaw", value: opt.rawValue)
+                                    } else {
+                                        settings.colorSchemeRaw = opt.rawValue
+                                    }
                                 } label: {
                                     HStack {
                                         Image(systemName: colorScheme == opt ? "checkmark.circle.fill" : "circle")
@@ -1197,10 +1247,10 @@ struct SettingsView: View {
                                 .foregroundColor(tint)
 
                             HStack(spacing: 20) {
-                                IntervalButton(interval: 5.0, currentInterval: $settings.patternInterval, tint: accentTint)
-                                IntervalButton(interval: 15.0, currentInterval: $settings.patternInterval, tint: accentTint)
-                                IntervalButton(interval: 30.0, currentInterval: $settings.patternInterval, tint: accentTint)
-                                IntervalButton(interval: 60.0, currentInterval: $settings.patternInterval, tint: accentTint)
+                                IntervalButton(interval: 5.0, currentInterval: followerDoubleBinding(for: \.patternInterval, key: "patternInterval"), tint: accentTint)
+                                IntervalButton(interval: 15.0, currentInterval: followerDoubleBinding(for: \.patternInterval, key: "patternInterval"), tint: accentTint)
+                                IntervalButton(interval: 30.0, currentInterval: followerDoubleBinding(for: \.patternInterval, key: "patternInterval"), tint: accentTint)
+                                IntervalButton(interval: 60.0, currentInterval: followerDoubleBinding(for: \.patternInterval, key: "patternInterval"), tint: accentTint)
                             }
                         }
 

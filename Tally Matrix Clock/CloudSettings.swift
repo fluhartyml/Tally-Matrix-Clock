@@ -49,6 +49,58 @@ class CloudSettings: ObservableObject {
     @Published var pauseRequested: Bool { didSet { if !initializing { pushRemoteCommand() } } }
     @Published var skipRequested: Bool { didSet { if !initializing { pushRemoteCommand() } } }
     @Published var requestedStation: String { didSet { if !initializing { pushRemoteCommand() } } }
+    @Published var requestedSettings: String { didSet { if !initializing { pushRemoteCommand() } } }
+
+    /// Followers call this to request any setting change from the leader
+    func requestSettingChange(key: String, value: Any) {
+        let dict: [String: Any] = ["key": key, "value": value]
+        if let data = try? JSONSerialization.data(withJSONObject: dict),
+           let json = String(data: data, encoding: .utf8) {
+            requestedSettings = json
+        }
+    }
+
+    /// Leader applies a requested setting change
+    func applyRequestedSettings() {
+        guard !requestedSettings.isEmpty else { return }
+        guard let data = requestedSettings.data(using: .utf8),
+              let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let key = dict["key"] as? String else {
+            requestedSettings = ""
+            return
+        }
+
+        switch key {
+        case "colorSchemeRaw":
+            if let v = dict["value"] as? String { colorSchemeRaw = v }
+        case "showBase10":
+            if let v = dict["value"] as? Bool { showBase10 = v }
+        case "use24Hour":
+            if let v = dict["value"] as? Bool { use24Hour = v }
+        case "showDate":
+            if let v = dict["value"] as? Bool { showDate = v }
+        case "showWeather":
+            if let v = dict["value"] as? Bool { showWeather = v }
+        case "showGlyphRain":
+            if let v = dict["value"] as? Bool { showGlyphRain = v }
+        case "glyphRainSizeRaw":
+            if let v = dict["value"] as? String { glyphRainSizeRaw = v }
+        case "backgroundMusic":
+            if let v = dict["value"] as? Bool { backgroundMusic = v }
+        case "playInBackground":
+            if let v = dict["value"] as? Bool { playInBackground = v }
+        case "musicStationRaw":
+            if let v = dict["value"] as? String { musicStationRaw = v }
+        case "sleepTimerMinutes":
+            if let v = dict["value"] as? Int { sleepTimerMinutes = v }
+        case "patternInterval":
+            if let v = dict["value"] as? Double { patternInterval = v }
+        default:
+            break
+        }
+
+        requestedSettings = ""
+    }
 
     // Unique per-device ID (persists across launches, unique per Apple TV)
     let deviceID: String = {
@@ -84,6 +136,7 @@ class CloudSettings: ObservableObject {
         pauseRequested = false  // Never persist — always starts fresh
         skipRequested = false
         requestedStation = ""  // Never persist — always starts fresh
+        requestedSettings = ""
 
         // Don't trust local cache for leadership — CloudKit is the authority
         // Start as non-leader; pullFromCloud will promote us if we're actually leader
@@ -191,6 +244,7 @@ class CloudSettings: ObservableObject {
         if let v = record["pauseRequested"] as? Bool { pauseRequested = v }
         if let v = record["skipRequested"] as? Bool { skipRequested = v }
         if let v = record["requestedStation"] as? String { requestedStation = v }
+        if let v = record["requestedSettings"] as? String { requestedSettings = v }
 
         initializing = false
         saveLocally()
@@ -230,6 +284,7 @@ class CloudSettings: ObservableObject {
             record["pauseRequested"] = self.pauseRequested as CKRecordValue
             record["skipRequested"] = self.skipRequested as CKRecordValue
             record["requestedStation"] = self.requestedStation as CKRecordValue
+            record["requestedSettings"] = self.requestedSettings as CKRecordValue
             let operation = CKModifyRecordsOperation(recordsToSave: [record])
             operation.savePolicy = .changedKeys
             operation.modifyRecordsResultBlock = { result in
