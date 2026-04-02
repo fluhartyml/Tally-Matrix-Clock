@@ -224,9 +224,11 @@ struct ContentView: View {
                                         .cornerRadius(10)
                                         .colorMultiply(colorScheme == .crimson ? Color(red: 0.6, green: 0.0, blue: 0.05) : .white)
                                 default:
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .fill(Color.gray.opacity(0.2))
+                                    Image("CryoPlaceholder")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
                                         .frame(width: 140, height: 140)
+                                        .cornerRadius(10)
                                 }
                             }
 
