@@ -19,6 +19,66 @@
 //  Location:       /Users/michaelfluharty/Developer/Tally-Matrix-Clock/
 
 // ============================================================================
+// MARK: - APP STORE CONNECT
+// ============================================================================
+//
+// ** Claude: Update this section as information becomes available.
+// ** Keep current with every submission. This is the source of truth.
+//
+//  App Name:           Tally Matrix Clock
+//  App Apple ID:       6754099799
+//  Bundle ID:          (check Xcode project)
+//  Category:           Utilities / Entertainment
+//  URL:                https://apps.apple.com/us/app/tally-matrix-clock/id6754099799
+//  Current Version:    2.3.1
+//  Status:             LIVE — remaining at current distribution
+//
+//  Subtitle:           Matrix Clock for AppleTV
+//
+//  Promotional Text (170 char max, updatable anytime):
+//    (currently blank or not set)
+//
+//  Description:
+//    Music from every era — 1920s Ragtime to today's Pop Hits — all
+//    on your Apple TV clock. Pick a decade, pick a year. Tally Matrix
+//    Clock turns your Apple TV into a retro-futuristic ambient display.
+//    Time is shown as illuminated tally matrices with animated pattern
+//    shuffles and cascading glyph rain — inspired by classic CRT terminals.
+//
+//  What's New (v2.3.1):
+//    Fixed Apple Music stations by feedback and popular demand. 80+
+//    stations now available — Popular Hits organized by decade (1958-2025),
+//    plus new genre stations: Big Band & Swing, Early Jazz, Jazz Age,
+//    and Ragtime. Minor bug fixes.
+//
+//  Privacy:            No ads. No tracking.
+//  License:            GPL v3
+//
+//  Version History:
+//    v2.3.1 (2026-03-27) — Fixed stations, 80+ available, new genres
+//    (earlier history predates this tracking)
+//
+// ============================================================================
+// MARK: - CURRENT STATUS (APR 02 2026)
+// ============================================================================
+//
+//  Hard reset to v2.3.1 (f5f7404) on APR 02 2026.
+//  All MAR 31 CryoKit migration work was rolled back for a clean start.
+//
+//  TODAY (APR 02): Clean CryoKit integration from v2.3.1 baseline.
+//  - Wire CryoKit package dependency
+//  - Replace local playback/station/weather code with CryoKit imports
+//  - My Music: playlist reveal, song counts, Play All, individual tracks (via CryoKit)
+//  - Shuffle, Repeat All, Repeat One
+//  - 18pt minimum fonts
+//  - Clean build, test, submit
+//
+//  CryoKit DIAMOND RULE:
+//  Claude may NOT remove, subtract, or modify code within CryoKit.
+//  Claude may add to it with express written consent from human ONLY.
+//
+
+// ============================================================================
 // MARK: - DESCRIPTION
 // ============================================================================
 //
