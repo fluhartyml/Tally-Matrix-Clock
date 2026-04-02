@@ -165,34 +165,6 @@ struct SettingsView: View {
                         }
 
                         if settings.backgroundMusic {
-                            HStack {
-                                Text("Play in Background")
-                                    .font(.system(size: 36))
-                                    .foregroundColor(tint)
-                                Spacer()
-                                Toggle("", isOn: followerBinding(for: \.playInBackground, key: "playInBackground"))
-                                    .labelsHidden()
-                            }
-
-                            // Off option
-                            Button {
-                                if isFollower {
-                                    settings.requestedStation = MusicStationOption.none.rawValue
-                                } else {
-                                    settings.musicStationRaw = MusicStationOption.none.rawValue
-                                }
-                            } label: {
-                                HStack {
-                                    Image(systemName: musicStation == .none ? "checkmark.circle.fill" : "circle")
-                                        .font(.system(size: 28))
-                                    Text("Off")
-                                        .font(.system(size: 30))
-                                    Spacer()
-                                }
-                                .padding(.vertical, 8)
-                            }
-                            .buttonStyle(SettingsFocusButtonStyle())
-
                             // Shuffle / Repeat
                             VStack(alignment: .leading, spacing: 20) {
                                 Text("Playback")
@@ -260,6 +232,34 @@ struct SettingsView: View {
                                     }
                                 }
                             }
+
+                            HStack {
+                                Text("Play in Background")
+                                    .font(.system(size: 36))
+                                    .foregroundColor(tint)
+                                Spacer()
+                                Toggle("", isOn: followerBinding(for: \.playInBackground, key: "playInBackground"))
+                                    .labelsHidden()
+                            }
+
+                            // Off option
+                            Button {
+                                if isFollower {
+                                    settings.requestedStation = MusicStationOption.none.rawValue
+                                } else {
+                                    settings.musicStationRaw = MusicStationOption.none.rawValue
+                                }
+                            } label: {
+                                HStack {
+                                    Image(systemName: musicStation == .none ? "checkmark.circle.fill" : "circle")
+                                        .font(.system(size: 28))
+                                    Text("Off")
+                                        .font(.system(size: 30))
+                                    Spacer()
+                                }
+                                .padding(.vertical, 8)
+                            }
+                            .buttonStyle(SettingsFocusButtonStyle())
 
                             // CryoKit station picker — scaled up for tvOS
                             CryoStationPicker(
