@@ -557,6 +557,8 @@ struct ContentView: View {
         guard settings.cloudReady else { return }
 
         guard settings.backgroundMusic, musicStation != .none else {
+            // Don't stop if already playing from My Music
+            if playerManager.isPlaying { return }
             stopBackgroundMusic()
             return
         }
