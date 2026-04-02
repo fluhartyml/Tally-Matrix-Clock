@@ -147,7 +147,7 @@ struct SettingsView: View {
                                                 .background(settings.glyphRainSizeRaw == size.rawValue ? accentTint : Color.gray.opacity(0.3))
                                                 .cornerRadius(8)
                                         }
-                                        .buttonStyle(.plain)
+                                        .buttonStyle(SettingsFocusButtonStyle())
                                     }
                                 }
                             }
@@ -192,15 +192,7 @@ struct SettingsView: View {
                                 .foregroundColor(tint)
                                 .padding(.vertical, 8)
                             }
-                            .buttonStyle(.plain)
-
-                            // CryoKit station picker
-                            CryoStationPicker(
-                                player: playerManager,
-                                tint: tint,
-                                accent: accentTint,
-                                border: tint.opacity(0.3)
-                            )
+                            .buttonStyle(SettingsFocusButtonStyle())
 
                             // Shuffle / Repeat
                             VStack(alignment: .leading, spacing: 20) {
@@ -223,7 +215,7 @@ struct SettingsView: View {
                                         .background(playerManager.isShuffleEnabled ? accentTint : Color.gray.opacity(0.3))
                                         .cornerRadius(8)
                                     }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(SettingsFocusButtonStyle())
 
                                     Button {
                                         playerManager.cycleRepeatMode()
@@ -239,7 +231,7 @@ struct SettingsView: View {
                                         .background(playerManager.repeatMode != .none ? accentTint : Color.gray.opacity(0.3))
                                         .cornerRadius(8)
                                     }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(SettingsFocusButtonStyle())
                                 }
                             }
 
@@ -265,10 +257,18 @@ struct SettingsView: View {
                                                 .background(settings.sleepTimerMinutes == option.rawValue ? accentTint : Color.gray.opacity(0.3))
                                                 .cornerRadius(8)
                                         }
-                                        .buttonStyle(.plain)
+                                        .buttonStyle(SettingsFocusButtonStyle())
                                     }
                                 }
                             }
+
+                            // CryoKit station picker
+                            CryoStationPicker(
+                                player: playerManager,
+                                tint: tint,
+                                accent: accentTint,
+                                border: tint.opacity(0.3)
+                            )
                         }
 
                         Divider().background(subtleTint)
@@ -296,7 +296,7 @@ struct SettingsView: View {
                                     .foregroundColor(tint)
                                     .padding(.vertical, 8)
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(SettingsFocusButtonStyle())
                             }
                         }
 
@@ -340,7 +340,7 @@ struct SettingsView: View {
                                 .foregroundColor(tint)
                                 .padding(.vertical, 8)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(SettingsFocusButtonStyle())
 
                             Text(settings.isLeader ? "This TV controls settings for all TVs" : settings.leaderDeviceName.isEmpty ? "No leader set — all TVs independent" : "Following: \(settings.leaderDeviceName)")
                                 .font(.system(size: 28))
@@ -380,7 +380,7 @@ struct SettingsView: View {
                 .padding(.vertical, 20)
                 .background(accentTint)
                 .cornerRadius(12)
-                .buttonStyle(.plain)
+                .buttonStyle(SettingsFocusButtonStyle())
                 .padding(.bottom, 40)
             }
         }
@@ -414,6 +414,6 @@ struct IntervalButton: View {
                 .background(currentInterval == interval ? tint : Color.gray.opacity(0.3))
                 .cornerRadius(8)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(SettingsFocusButtonStyle())
     }
 }
