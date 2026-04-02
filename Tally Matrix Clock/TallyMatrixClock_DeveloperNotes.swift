@@ -77,11 +77,11 @@
 //  Claude may NOT remove, subtract, or modify code within CryoKit.
 //  Claude may add to it with express written consent from human ONLY.
 //
-//  CryoKit tvOS FONT OVERRIDE:
-//  CryoStationPicker accepts a fontSize parameter (default 18pt).
-//  tvOS passes fontSize: 28 for TV-distance readability.
-//  All fonts in the picker scale proportionally from this base.
-//  No .scaleEffect() needed — system focus highlights adapt naturally.
+//  CryoKit has NO aesthetic control:
+//  All font modifiers stripped from CryoKit views.
+//  Apps control their own fonts, sizes, and button styles.
+//  CryoKit only accepts tint/accent/border colors from the app.
+//  tvOS app sets its own fonts via parent view modifiers or button styles.
 //
 
 // ============================================================================
