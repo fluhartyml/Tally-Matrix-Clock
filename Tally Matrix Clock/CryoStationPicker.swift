@@ -11,6 +11,7 @@ import CryoKit
 
 struct CryoStationPicker: View {
     @Bindable var player: MusicPlaybackManager
+    @ObservedObject var settings: CloudSettings
 
     @State private var expandedCategories: Set<StationCategory> = []
     @State private var expandedDecades: Set<BillboardDecade> = []
@@ -25,9 +26,11 @@ struct CryoStationPicker: View {
     @State private var playlistTrackCounts: [MusicItemID: Int] = [:]
 
     init(
-        player: MusicPlaybackManager
+        player: MusicPlaybackManager,
+        settings: CloudSettings
     ) {
         self.player = player
+        self.settings = settings
     }
 
     var body: some View {
@@ -273,6 +276,7 @@ struct CryoStationPicker: View {
                 ) {
                     ForEach(player.libraryAlbums, id: \.id) { album in
                         Button {
+                            settings.musicStationRaw = MusicStationOption.none.rawValue
                             Task { await player.playAlbum(album) }
                         } label: {
                             HStack {
@@ -303,6 +307,7 @@ struct CryoStationPicker: View {
                 ) {
                     ForEach(player.libraryArtists, id: \.id) { artist in
                         Button {
+                            settings.musicStationRaw = MusicStationOption.none.rawValue
                             Task { await player.loadSongs(for: artist) }
                         } label: {
                             HStack {
@@ -420,6 +425,7 @@ struct CryoStationPicker: View {
             if expandedPlaylistID == playlist.id {
                 // Play All
                 Button {
+                    settings.musicStationRaw = MusicStationOption.none.rawValue
                     Task { await player.playPlaylist(playlist) }
                 } label: {
                     HStack {
@@ -438,6 +444,7 @@ struct CryoStationPicker: View {
                 // Individual songs
                 ForEach(revealedSongs, id: \.id) { song in
                     Button {
+                        settings.musicStationRaw = MusicStationOption.none.rawValue
                         Task { await player.playSong(song) }
                     } label: {
                         HStack {

@@ -263,7 +263,8 @@ struct SettingsView: View {
 
                             // Station picker — app controls presentation
                             CryoStationPicker(
-                                player: playerManager
+                                player: playerManager,
+                                settings: settings
                             )
                             .font(.system(size: 28, design: .monospaced))
                             .foregroundColor(.white)

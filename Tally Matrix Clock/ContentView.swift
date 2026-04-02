@@ -198,7 +198,7 @@ struct ContentView: View {
                                 Image(systemName: isFollower ? "airplayaudio" : "music.note")
                                     .font(.system(size: 28))
                                     .foregroundColor(textColor)
-                                Text(isFollower ? "\(MusicStationOption(rawValue: settings.musicStationRaw)?.rawValue ?? "Music") via AirPlay" : nowPlayingTitle)
+                                Text(isFollower ? "\(MusicStationOption(rawValue: settings.musicStationRaw)?.rawValue ?? "Music") via AirPlay" : (playerManager.nowPlayingTitle.isEmpty ? nowPlayingTitle : playerManager.nowPlayingTitle))
                                     .font(.system(size: 30, weight: .regular))
                                     .foregroundColor(textColor)
                                     .lineLimit(1)

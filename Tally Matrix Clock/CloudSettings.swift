@@ -45,6 +45,9 @@ class CloudSettings: ObservableObject {
     // Leader/Follower
     @Published var leaderDeviceName: String { didSet { syncToCloud() } }
     @Published var isLeader: Bool = false
+    @Published var leaderLastSeen: Date = .distantPast
+    private let leaderTimeout: TimeInterval = 120 // 2 minutes
+    private var lastHeartbeat: Date = .distantPast
 
     // Remote commands — any device can request, leader executes
     @Published var pauseRequested: Bool { didSet { if !initializing { pushRemoteCommand() } } }
@@ -177,6 +180,9 @@ class CloudSettings: ObservableObject {
         record["colorSchemeRaw"] = colorSchemeRaw as CKRecordValue
         record["patternInterval"] = patternInterval as CKRecordValue
         record["leaderDeviceName"] = leaderDeviceName as CKRecordValue
+        if isLeader {
+            record["leaderLastSeen"] = Date() as CKRecordValue
+        }
 
         let operation = CKModifyRecordsOperation(recordsToSave: [record])
         operation.savePolicy = .allKeys
@@ -243,6 +249,15 @@ class CloudSettings: ObservableObject {
             leaderDeviceName = v
             isLeader = !v.isEmpty && v == deviceName
         }
+        let heartbeat = record["leaderLastSeen"] as? Date
+        leaderLastSeen = heartbeat ?? .distantPast
+        if !isLeader && !leaderDeviceName.isEmpty {
+            let elapsed = Date().timeIntervalSince(heartbeat ?? .distantPast)
+            if elapsed > leaderTimeout {
+                print("CloudKit: Leader heartbeat flatlined (\(Int(elapsed))s ago, field \(heartbeat == nil ? "missing" : "stale")) — self-promoting to leader")
+                setAsLeader()
+            }
+        }
         if let v = record["pauseRequested"] as? Bool { pauseRequested = v }
         if let v = record["skipRequested"] as? Bool { skipRequested = v }
         if let v = record["requestedStation"] as? String { requestedStation = v }
@@ -272,7 +287,12 @@ class CloudSettings: ObservableObject {
 
     private func startPolling() {
         pollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.pullFromCloud()
+            guard let self = self else { return }
+            self.pullFromCloud()
+            if self.isLeader && Date().timeIntervalSince(self.lastHeartbeat) > 30 {
+                self.lastHeartbeat = Date()
+                self.syncToCloud()
+            }
         }
     }
 
