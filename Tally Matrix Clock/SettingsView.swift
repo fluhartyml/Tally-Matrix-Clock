@@ -267,7 +267,6 @@ struct SettingsView: View {
                             )
                             .font(.system(size: 28, design: .monospaced))
                             .foregroundColor(.white)
-                            .buttonStyle(SettingsFocusButtonStyle())
                         }
 
                         Divider().background(subtleTint)

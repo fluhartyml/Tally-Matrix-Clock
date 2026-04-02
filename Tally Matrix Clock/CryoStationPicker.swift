@@ -73,6 +73,7 @@ struct CryoStationPicker: View {
                 .padding(.vertical, 10)
                 .padding(.horizontal, 8)
             }
+            .buttonStyle(SettingsFocusButtonStyle())
 
             if expandedCategories.contains(category) {
                 ForEach(MusicStationOption.stations(for: category), id: \.self) { station in
@@ -112,6 +113,7 @@ struct CryoStationPicker: View {
                 .padding(.leading, 28)
                 .padding(.trailing, 8)
             }
+            .buttonStyle(SettingsFocusButtonStyle())
 
             if asmrExpanded {
                 ForEach(MusicStationOption.asmrStations, id: \.self) { station in
@@ -150,6 +152,7 @@ struct CryoStationPicker: View {
                 .padding(.vertical, 10)
                 .padding(.horizontal, 8)
             }
+            .buttonStyle(SettingsFocusButtonStyle())
 
             if expandedCategories.contains(.billboard) {
                 stationRow(station: .top100USA)
@@ -189,6 +192,7 @@ struct CryoStationPicker: View {
                 .padding(.leading, 28)
                 .padding(.trailing, 8)
             }
+            .buttonStyle(SettingsFocusButtonStyle())
 
             if expandedDecades.contains(decade) {
                 ForEach(MusicStationOption.stations(for: decade), id: \.self) { station in
@@ -217,6 +221,7 @@ struct CryoStationPicker: View {
             .padding(.leading, indent ? 48 : 28)
             .padding(.trailing, 8)
         }
+        .buttonStyle(SettingsFocusButtonStyle())
     }
 
     // MARK: - My Music
@@ -245,6 +250,7 @@ struct CryoStationPicker: View {
                 .padding(.vertical, 10)
                 .padding(.horizontal, 8)
             }
+            .buttonStyle(SettingsFocusButtonStyle())
 
             if myMusicExpanded {
                 // Playlists
@@ -285,6 +291,7 @@ struct CryoStationPicker: View {
                             .padding(.leading, 48)
                             .padding(.trailing, 8)
                         }
+                        .buttonStyle(SettingsFocusButtonStyle())
                     }
                 }
 
@@ -310,6 +317,7 @@ struct CryoStationPicker: View {
                             .padding(.leading, 48)
                             .padding(.trailing, 8)
                         }
+                        .buttonStyle(SettingsFocusButtonStyle())
                     }
                 }
             }
@@ -342,6 +350,7 @@ struct CryoStationPicker: View {
                 .padding(.leading, 28)
                 .padding(.trailing, 8)
             }
+            .buttonStyle(SettingsFocusButtonStyle())
 
             if isExpanded.wrappedValue {
                 content()
@@ -405,6 +414,7 @@ struct CryoStationPicker: View {
                 .padding(.leading, 48)
                 .padding(.trailing, 8)
             }
+            .buttonStyle(SettingsFocusButtonStyle())
 
             // Revealed track list
             if expandedPlaylistID == playlist.id {
@@ -423,6 +433,7 @@ struct CryoStationPicker: View {
                     .padding(.leading, 62)
                     .padding(.trailing, 8)
                 }
+                .buttonStyle(SettingsFocusButtonStyle())
 
                 // Individual songs
                 ForEach(revealedSongs, id: \.id) { song in
@@ -442,6 +453,7 @@ struct CryoStationPicker: View {
                         .padding(.leading, 62)
                         .padding(.trailing, 8)
                     }
+                    .buttonStyle(SettingsFocusButtonStyle())
                 }
             }
         }
