@@ -189,7 +189,6 @@ struct SettingsView: View {
                                         .font(.system(size: 30))
                                     Spacer()
                                 }
-                                .foregroundColor(tint)
                                 .padding(.vertical, 8)
                             }
                             .buttonStyle(SettingsFocusButtonStyle())
@@ -293,7 +292,6 @@ struct SettingsView: View {
                                             .font(.system(size: 30))
                                         Spacer()
                                     }
-                                    .foregroundColor(tint)
                                     .padding(.vertical, 8)
                                 }
                                 .buttonStyle(SettingsFocusButtonStyle())
@@ -337,7 +335,6 @@ struct SettingsView: View {
                                         .font(.system(size: 30))
                                         .foregroundColor(settings.isLeader ? (isCrimson ? tint : .green) : .gray)
                                 }
-                                .foregroundColor(tint)
                                 .padding(.vertical, 8)
                             }
                             .buttonStyle(SettingsFocusButtonStyle())
