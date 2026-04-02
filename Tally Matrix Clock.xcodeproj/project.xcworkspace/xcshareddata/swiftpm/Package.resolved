@@ -4,10 +4,10 @@
     {
       "identity" : "cryokit",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/fluhartyml/CryoKit",
+      "location" : "https://github.com/fluhartyml/CryoKit.git",
       "state" : {
         "branch" : "main",
-        "revision" : "b5a84f8a67f1d73a8c6f4721b5a46c4daaaf635c"
+        "revision" : "54cf9cd97a65682e0f9a65f893d138f24b650bd6"
       }
     }
   ],

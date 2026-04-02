@@ -78,11 +78,10 @@
 //  Claude may add to it with express written consent from human ONLY.
 //
 //  CryoKit tvOS FONT OVERRIDE:
-//  CryoKit's CryoStationPicker uses iPhone/iPad-sized fonts (14-18pt).
-//  tvOS requires larger fonts to be readable on a TV screen.
-//  Do NOT modify CryoKit to fix this. Instead, apply .scaleEffect()
-//  on the CryoStationPicker from the tvOS app side.
-//  Current scale: 1.8x (in SettingsView.swift)
+//  CryoStationPicker accepts a fontSize parameter (default 18pt).
+//  tvOS passes fontSize: 28 for TV-distance readability.
+//  All fonts in the picker scale proportionally from this base.
+//  No .scaleEffect() needed — system focus highlights adapt naturally.
 //
 
 // ============================================================================

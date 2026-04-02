@@ -261,15 +261,14 @@ struct SettingsView: View {
                             }
                             .buttonStyle(SettingsFocusButtonStyle())
 
-                            // CryoKit station picker — scaled up for tvOS
+                            // CryoKit station picker — tvOS font size override
                             CryoStationPicker(
                                 player: playerManager,
                                 tint: tint,
                                 accent: accentTint,
-                                border: tint.opacity(0.3)
+                                border: tint.opacity(0.3),
+                                fontSize: 28
                             )
-                            .scaleEffect(1.8, anchor: .topLeading)
-                            .frame(height: nil)
                         }
 
                         Divider().background(subtleTint)
