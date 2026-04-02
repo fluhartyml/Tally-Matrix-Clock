@@ -261,13 +261,15 @@ struct SettingsView: View {
                                 }
                             }
 
-                            // CryoKit station picker
+                            // CryoKit station picker — scaled up for tvOS
                             CryoStationPicker(
                                 player: playerManager,
                                 tint: tint,
                                 accent: accentTint,
                                 border: tint.opacity(0.3)
                             )
+                            .scaleEffect(1.8, anchor: .topLeading)
+                            .frame(height: nil)
                         }
 
                         Divider().background(subtleTint)
