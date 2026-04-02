@@ -261,10 +261,13 @@ struct SettingsView: View {
                             }
                             .buttonStyle(SettingsFocusButtonStyle())
 
-                            // CryoKit station picker
+                            // Station picker — app controls presentation
                             CryoStationPicker(
                                 player: playerManager
                             )
+                            .font(.system(size: 28, design: .monospaced))
+                            .foregroundColor(.white)
+                            .buttonStyle(SettingsFocusButtonStyle())
                         }
 
                         Divider().background(subtleTint)
