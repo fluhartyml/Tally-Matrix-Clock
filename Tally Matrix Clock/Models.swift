@@ -64,14 +64,12 @@ struct TextTargetKey: PreferenceKey {
     }
 }
 
-// tvOS focus button style — dark text on white focus highlight, white text when unfocused
+// tvOS focus button style — let system draw the white focus highlight, just flip text to dark
 struct SettingsFocusButtonStyle: ButtonStyle {
     @Environment(\.isFocused) var isFocused
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .foregroundColor(isFocused ? .black : .white)
-            .scaleEffect(isFocused ? 1.02 : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: isFocused)
     }
 }
