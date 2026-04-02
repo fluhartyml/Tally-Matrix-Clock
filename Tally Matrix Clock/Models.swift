@@ -64,12 +64,22 @@ struct TextTargetKey: PreferenceKey {
     }
 }
 
-// tvOS focus button style — dark text on system focus highlight, no custom background
+// tvOS focus button style — from MAR 31 approved commit d3187db
+// Draws its own white background on focus, flips text to dark
+// This IS the sleek highlight — not the system default
 struct SettingsFocusButtonStyle: ButtonStyle {
     @Environment(\.isFocused) var isFocused
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .foregroundColor(isFocused ? .black : .white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isFocused ? Color.white : Color.clear)
+            )
+            .scaleEffect(isFocused ? 1.02 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: isFocused)
     }
 }
