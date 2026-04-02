@@ -263,13 +263,8 @@ struct SettingsView: View {
 
                             // CryoKit station picker
                             CryoStationPicker(
-                                player: playerManager,
-                                tint: tint,
-                                accent: accentTint,
-                                border: tint.opacity(0.3)
+                                player: playerManager
                             )
-                            .font(.system(size: 28, design: .monospaced))
-                            .buttonStyle(SettingsFocusButtonStyle())
                         }
 
                         Divider().background(subtleTint)
