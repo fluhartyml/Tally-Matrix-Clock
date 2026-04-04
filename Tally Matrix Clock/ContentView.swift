@@ -263,8 +263,8 @@ struct ContentView: View {
                             .font(.system(size: 48, weight: .bold, design: .monospaced))
                             .foregroundColor(schemeColor)
                         Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? ""))")
-                            .font(.system(size: 29, weight: .regular, design: .monospaced))
-                            .foregroundColor(schemeColor.opacity(0.5))
+                            .font(.system(size: 48, weight: .bold, design: .monospaced))
+                            .foregroundColor(schemeColor)
                     }
                     .padding(.top, 30)
                     Spacer()
