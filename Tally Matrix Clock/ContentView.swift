@@ -577,101 +577,31 @@ struct ContentView: View {
         }
 
         Task {
-            let status = await MusicAuthorization.request()
-            await MainActor.run { musicAuthorized = status == .authorized }
-            guard status == .authorized else {
-                await MainActor.run { nowPlayingTitle = "Music not authorized" }
-                return
-            }
-
-            let player = ApplicationMusicPlayer.shared
-
-            // Set repeat mode for nature/focus content
-            if musicStation.shouldRepeat {
-                player.state.repeatMode = .all
-            } else {
-                player.state.repeatMode = MusicPlayer.RepeatMode.none
-            }
-
             // Retry up to 3 times — MusicKit connection may not be ready ("ping did not pong")
             for attempt in 1...3 {
-                do {
-                    let searchType = musicStation.searchType
-                    let term = musicStation.searchTerm
+                await playerManager.play(station: musicStation)
 
-                    var resultName: String?
-
-                    switch searchType {
-                    case .stationFirst:
-                        resultName = try await playStation(term: term, player: player)
-                        if resultName == nil {
-                            resultName = try await playPlaylist(term: term, player: player)
-                        }
-
-                    case .stationOnly:
-                        resultName = try await playStation(term: term, player: player)
-
-                    case .playlistFirst:
-                        resultName = try await playPlaylist(term: term, player: player)
-                        if resultName == nil {
-                            resultName = try await playStation(term: term, player: player)
-                        }
-
-                    case .albumFirst:
-                        resultName = try await playAlbum(term: term, player: player)
-                        if resultName == nil {
-                            resultName = try await playPlaylist(term: term, player: player)
-                        }
-                    }
-
-                    if let name = resultName {
-                        await MainActor.run { nowPlayingTitle = name; suppressNowPlayingOverlay() }
-                    } else {
-                        await MainActor.run { nowPlayingTitle = "No results found" }
+                if playerManager.isPlaying {
+                    await MainActor.run {
+                        nowPlayingTitle = playerManager.nowPlayingTitle
+                        musicAuthorized = playerManager.isAuthorized
+                        suppressNowPlayingOverlay()
                     }
                     return // Success — exit retry loop
-                } catch {
+                }
+
+                if !playerManager.errorMessage.isEmpty {
                     if attempt < 3 {
-                        try? await Task.sleep(nanoseconds: 2_000_000_000) // Wait 2s before retry
+                        try? await Task.sleep(nanoseconds: 2_000_000_000)
                     } else {
-                        await MainActor.run { nowPlayingTitle = "Error: \(error.localizedDescription)" }
+                        await MainActor.run { nowPlayingTitle = "Error: \(playerManager.errorMessage)" }
                     }
+                } else {
+                    await MainActor.run { nowPlayingTitle = "No results found" }
+                    return
                 }
             }
         }
-    }
-
-    func playStation(term: String, player: ApplicationMusicPlayer) async throws -> String? {
-        var request = MusicCatalogSearchRequest(term: term, types: [Station.self])
-        request.limit = 1
-        let response = try await request.response()
-        guard let station = response.stations.first else { return nil }
-        player.queue = [station]
-        try await player.prepareToPlay()
-        try await player.play()
-        return station.name
-    }
-
-    func playPlaylist(term: String, player: ApplicationMusicPlayer) async throws -> String? {
-        var request = MusicCatalogSearchRequest(term: term, types: [Playlist.self])
-        request.limit = 1
-        let response = try await request.response()
-        guard let playlist = response.playlists.first else { return nil }
-        player.queue = [playlist]
-        try await player.prepareToPlay()
-        try await player.play()
-        return playlist.name
-    }
-
-    func playAlbum(term: String, player: ApplicationMusicPlayer) async throws -> String? {
-        var request = MusicCatalogSearchRequest(term: term, types: [Album.self])
-        request.limit = 1
-        let response = try await request.response()
-        guard let album = response.albums.first else { return nil }
-        player.queue = [album]
-        try await player.prepareToPlay()
-        try await player.play()
-        return album.title
     }
 
     func startSleepTimer(minutes: Int) {
