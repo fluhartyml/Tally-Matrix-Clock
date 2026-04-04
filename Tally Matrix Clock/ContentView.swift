@@ -196,7 +196,7 @@ struct ContentView: View {
                         if settings.backgroundMusic && (!nowPlayingTitle.isEmpty || isFollower) {
                             HStack(spacing: 8) {
                                 Image(systemName: isFollower ? "airplayaudio" : "music.note")
-                                    .font(.system(size: 28))
+                                    .font(.system(size: 29))
                                     .foregroundColor(textColor)
                                 Text(isFollower ? "\(MusicStationOption(rawValue: settings.musicStationRaw)?.rawValue ?? "Music") via AirPlay" : (playerManager.nowPlayingTitle.isEmpty ? nowPlayingTitle : playerManager.nowPlayingTitle))
                                     .font(.system(size: 30, weight: .regular))
@@ -204,7 +204,7 @@ struct ContentView: View {
                                     .lineLimit(1)
                                 if !sleepTimerRemaining.isEmpty {
                                     Text("· \(sleepTimerRemaining)")
-                                        .font(.system(size: 28, weight: .light))
+                                        .font(.system(size: 29, weight: .light))
                                         .foregroundColor(textColor.opacity(0.6))
                                 }
                             }
@@ -258,10 +258,15 @@ struct ContentView: View {
             // Device name — top center (testing)
             if !showEasterEgg {
                 VStack {
-                    Text(settings.deviceName)
-                        .font(.system(size: 48, weight: .bold, design: .monospaced))
-                        .foregroundColor(schemeColor)
-                        .padding(.top, 30)
+                    HStack(spacing: 16) {
+                        Text(settings.deviceName)
+                            .font(.system(size: 48, weight: .bold, design: .monospaced))
+                            .foregroundColor(schemeColor)
+                        Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? ""))")
+                            .font(.system(size: 29, weight: .regular, design: .monospaced))
+                            .foregroundColor(schemeColor.opacity(0.5))
+                    }
+                    .padding(.top, 30)
                     Spacer()
                 }
                 .opacity(clockOpacity)
@@ -276,7 +281,7 @@ struct ContentView: View {
                         VStack(alignment: .trailing, spacing: 4) {
                             Text(settings.isLeader ? "Leader" : "Follower")
                         }
-                            .font(.system(size: 22, weight: .medium, design: .monospaced))
+                            .font(.system(size: 29, weight: .medium, design: .monospaced))
                             .foregroundColor(schemeColor.opacity(0.8))
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)

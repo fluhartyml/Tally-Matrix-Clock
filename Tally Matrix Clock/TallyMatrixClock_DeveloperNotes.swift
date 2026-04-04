@@ -30,8 +30,8 @@
 //  Bundle ID:          (check Xcode project)
 //  Category:           Utilities / Entertainment
 //  URL:                https://apps.apple.com/us/app/tally-matrix-clock/id6754099799
-//  Current Version:    2.3.1
-//  Status:             LIVE — remaining at current distribution
+//  Current Version:    2.4
+//  Status:             v2.4 submitted APR 02 4:21 PM, waiting for review
 //
 //  Subtitle:           Matrix Clock for AppleTV
 //
@@ -55,6 +55,8 @@
 //  License:            GPL v3
 //
 //  Version History:
+//    v2.4 (2026-04-02) — CryoKit data layer, shuffle/repeat, playlist reveal,
+//      heartbeat, focus highlight, normalized codebase, CryoTunes placeholder art
 //    v2.3.1 (2026-03-27) — Fixed stations, 80+ available, new genres
 //    (earlier history predates this tracking)
 //
@@ -76,6 +78,10 @@
 //  CryoKit DIAMOND RULE:
 //  Claude may NOT remove, subtract, or modify code within CryoKit.
 //  Claude may add to it with express written consent from human ONLY.
+//
+//  App version displayed on clock face next to Apple TV device name.
+//  Uses Bundle.main CFBundleShortVersionString at runtime.
+//  Useful for confirming which build is running on each TV.
 //
 //  CryoKit has NO aesthetic control:
 //  All font modifiers stripped from CryoKit views.

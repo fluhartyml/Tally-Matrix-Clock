@@ -177,7 +177,7 @@ struct SettingsView: View {
                                     } label: {
                                         HStack {
                                             Image(systemName: "shuffle")
-                                                .font(.system(size: 28))
+                                                .font(.system(size: 29))
                                             Text("Shuffle")
                                                 .font(.system(size: 30))
                                         }
@@ -193,7 +193,7 @@ struct SettingsView: View {
                                     } label: {
                                         HStack {
                                             Image(systemName: playerManager.repeatMode == .one ? "repeat.1" : "repeat")
-                                                .font(.system(size: 28))
+                                                .font(.system(size: 29))
                                             Text(playerManager.repeatMode.displayName)
                                                 .font(.system(size: 30))
                                         }
@@ -252,7 +252,7 @@ struct SettingsView: View {
                             } label: {
                                 HStack {
                                     Image(systemName: musicStation == .none ? "checkmark.circle.fill" : "circle")
-                                        .font(.system(size: 28))
+                                        .font(.system(size: 29))
                                     Text("Off")
                                         .font(.system(size: 30))
                                     Spacer()
@@ -266,7 +266,7 @@ struct SettingsView: View {
                                 player: playerManager,
                                 settings: settings
                             )
-                            .font(.system(size: 28, design: .monospaced))
+                            .font(.system(size: 29, design: .monospaced))
                             .foregroundColor(.white)
                         }
 
@@ -287,7 +287,7 @@ struct SettingsView: View {
                                 } label: {
                                     HStack {
                                         Image(systemName: colorScheme == opt ? "checkmark.circle.fill" : "circle")
-                                            .font(.system(size: 28))
+                                            .font(.system(size: 29))
                                         Text(opt.rawValue)
                                             .font(.system(size: 30))
                                         Spacer()
@@ -340,7 +340,7 @@ struct SettingsView: View {
                             .buttonStyle(SettingsFocusButtonStyle())
 
                             Text(settings.isLeader ? "This TV controls settings for all TVs" : settings.leaderDeviceName.isEmpty ? "No leader set — all TVs independent" : "Following: \(settings.leaderDeviceName)")
-                                .font(.system(size: 28))
+                                .font(.system(size: 29))
                                 .foregroundColor(tint.opacity(0.6))
 
                             if settings.isLeader {
@@ -351,7 +351,7 @@ struct SettingsView: View {
                                     .foregroundColor(tint)
 
                                 Text("Select other TVs to stream audio from this leader")
-                                    .font(.system(size: 28))
+                                    .font(.system(size: 29))
                                     .foregroundColor(tint.opacity(0.6))
 
                                 AirPlayPickerView()
