@@ -111,8 +111,28 @@ struct GlyphRainView: View {
                 columns[i].y = -totalHeight - CGFloat.random(in: 0...300)
                 columns[i].speed = CGFloat.random(in: 3...10)
                 columns[i].fontSize = CGFloat.random(in: rainSize.fontSizeRange)
-                columns[i].trailLength = Int.random(in: 8...25)
-                columns[i].glyphs = (0..<columns[i].trailLength).map { _ in randomGlyph() }
+
+                // Easter eggs: rare chance a column carries a hidden message
+                let roll = Int.random(in: 0...500)
+                if roll == 0 {
+                    // Apple Weather attribution
+                    let msg = Array(" Weather")
+                    columns[i].trailLength = msg.count
+                    columns[i].glyphs = msg
+                } else if roll == 1 {
+                    // Claude credit
+                    let msg = Array("Engineered by Claude")
+                    columns[i].trailLength = msg.count
+                    columns[i].glyphs = msg
+                } else if roll == 2 {
+                    // The developer
+                    let msg = Array("Michael Lee Fluharty")
+                    columns[i].trailLength = msg.count
+                    columns[i].glyphs = msg
+                } else {
+                    columns[i].trailLength = Int.random(in: 8...25)
+                    columns[i].glyphs = (0..<columns[i].trailLength).map { _ in randomGlyph() }
+                }
                 columns[i].columnColor = randomColumnColor()
             }
         }
