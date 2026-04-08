@@ -113,7 +113,7 @@ struct GlyphRainView: View {
                 columns[i].fontSize = CGFloat.random(in: rainSize.fontSizeRange)
 
                 // Easter eggs: rare chance a column carries a hidden message
-                let roll = Int.random(in: 0...500)
+                let roll = Int.random(in: 0...250)
                 if roll == 0 {
                     // Apple Weather attribution
                     let msg = Array(" Weather")
