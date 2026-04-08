@@ -7,6 +7,7 @@ import SwiftUI
 import MusicKit
 import AVKit
 import CryoKit
+import WeatherKit
 
 struct SettingsView: View {
     @Environment(\.dismiss) var dismiss
@@ -114,6 +115,11 @@ struct SettingsView: View {
                             Spacer()
                             Toggle("", isOn: followerBinding(for: \.showWeather, key: "showWeather"))
                                 .labelsHidden()
+                        }
+
+                        if settings.showWeather {
+                            WeatherAttributionLabel(tint: tint)
+                                .padding(.vertical, 4)
                         }
 
                         HStack {
@@ -412,5 +418,36 @@ struct IntervalButton: View {
                 .cornerRadius(8)
         }
         .buttonStyle(SettingsFocusButtonStyle())
+    }
+}
+
+struct WeatherAttributionLabel: View {
+    let tint: Color
+    @State private var attribution: WeatherAttribution?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let attribution {
+                AsyncImage(url: attribution.combinedMarkDarkURL) { image in
+                    image
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 30)
+                } placeholder: {
+                    Text(" Weather")
+                        .font(.system(size: 29))
+                        .foregroundColor(tint.opacity(0.6))
+                }
+            } else {
+                Text(" Weather")
+                    .font(.system(size: 29))
+                    .foregroundColor(tint.opacity(0.6))
+            }
+        }
+        .task {
+            do {
+                attribution = try await WeatherService.shared.attribution
+            } catch {}
+        }
     }
 }
