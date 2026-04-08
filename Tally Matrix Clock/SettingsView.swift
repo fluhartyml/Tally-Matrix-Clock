@@ -438,6 +438,9 @@ struct WeatherAttributionLabel: View {
                         .font(.system(size: 29))
                         .foregroundColor(tint.opacity(0.6))
                 }
+                Text(attribution.legalPageURL.absoluteString)
+                    .font(.system(size: 22))
+                    .foregroundColor(tint.opacity(0.4))
             } else {
                 Text(" Weather")
                     .font(.system(size: 29))

@@ -23,6 +23,10 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         location = locations.last
     }
 
+    func retryLocation() {
+        manager.requestLocation()
+    }
+
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         // Location is optional — silently fail
     }

@@ -163,33 +163,44 @@ struct ContentView: View {
                                 )
                         }
 
-                        if settings.showWeather && !weatherTemp.isEmpty {
-                            HStack(spacing: 12) {
-                                if !weatherSymbol.isEmpty {
-                                    Image(systemName: weatherSymbol)
+                        if settings.showWeather {
+                            if !weatherTemp.isEmpty {
+                                HStack(spacing: 12) {
+                                    if !weatherSymbol.isEmpty {
+                                        Image(systemName: weatherSymbol)
+                                            .font(.system(size: 40))
+                                            .foregroundColor(textColor)
+                                    }
+                                    Text(weatherTemp)
+                                        .font(.system(size: 44, weight: .regular, design: .monospaced))
+                                        .foregroundColor(textColor)
+                                        .background(
+                                            GeometryReader { geo in
+                                                Color.clear.preference(key: TextTargetKey.self, value: [
+                                                    TextTarget(text: weatherTemp, frame: geo.frame(in: .global), fontSize: 40, isMonospaced: true)
+                                                ])
+                                            }
+                                        )
+                                    Text(weatherCondition)
+                                        .font(.system(size: 40, weight: .regular))
+                                        .foregroundColor(textColor)
+                                        .background(
+                                            GeometryReader { geo in
+                                                Color.clear.preference(key: TextTargetKey.self, value: [
+                                                    TextTarget(text: weatherCondition, frame: geo.frame(in: .global), fontSize: 36, isMonospaced: false)
+                                                ])
+                                            }
+                                        )
+                                }
+                            } else {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "cloud.slash")
                                         .font(.system(size: 40))
                                         .foregroundColor(textColor)
+                                    Text("Weather Unavailable")
+                                        .font(.system(size: 40, weight: .regular))
+                                        .foregroundColor(textColor)
                                 }
-                                Text(weatherTemp)
-                                    .font(.system(size: 44, weight: .regular, design: .monospaced))
-                                    .foregroundColor(textColor)
-                                    .background(
-                                        GeometryReader { geo in
-                                            Color.clear.preference(key: TextTargetKey.self, value: [
-                                                TextTarget(text: weatherTemp, frame: geo.frame(in: .global), fontSize: 40, isMonospaced: true)
-                                            ])
-                                        }
-                                    )
-                                Text(weatherCondition)
-                                    .font(.system(size: 40, weight: .regular))
-                                    .foregroundColor(textColor)
-                                    .background(
-                                        GeometryReader { geo in
-                                            Color.clear.preference(key: TextTargetKey.self, value: [
-                                                TextTarget(text: weatherCondition, frame: geo.frame(in: .global), fontSize: 36, isMonospaced: false)
-                                            ])
-                                        }
-                                    )
                             }
                         }
 
@@ -255,22 +266,6 @@ struct ContentView: View {
             }
             .opacity(clockOpacity)
 
-            // Device name — top center (testing)
-            if !showEasterEgg {
-                VStack {
-                    HStack(spacing: 16) {
-                        Text(settings.deviceName)
-                            .font(.system(size: 48, weight: .bold, design: .monospaced))
-                            .foregroundColor(schemeColor)
-                        Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? ""))")
-                            .font(.system(size: 48, weight: .bold, design: .monospaced))
-                            .foregroundColor(schemeColor)
-                    }
-                    .padding(.top, 30)
-                    Spacer()
-                }
-                .opacity(clockOpacity)
-            }
 
             // Leader/Follower badge — bottom right
             if !showEasterEgg {
@@ -677,9 +672,14 @@ struct ContentView: View {
 
     func fetchWeather() {
         guard settings.showWeather else { return }
-        guard let location = locationManager.location else { return }
-        // Only fetch every 15 minutes
-        guard Date().timeIntervalSince(lastWeatherFetch) > 900 else { return }
+        guard let location = locationManager.location else {
+            locationManager.retryLocation()
+            return
+        }
+        // Skip throttle if we haven't successfully fetched yet
+        let hasWeather = !weatherTemp.isEmpty
+        // Only fetch every 15 minutes after first successful fetch
+        guard !hasWeather || Date().timeIntervalSince(lastWeatherFetch) > 900 else { return }
         lastWeatherFetch = Date()
 
         Task {
