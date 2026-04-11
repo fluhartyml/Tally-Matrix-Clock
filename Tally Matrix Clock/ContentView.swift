@@ -202,6 +202,12 @@ struct ContentView: View {
                                         .foregroundColor(textColor)
                                 }
                             }
+                            // Apple Weather attribution (required by WeatherKit)
+                            Link(destination: URL(string: "https://weatherkit.apple.com/legal-attribution.html")!) {
+                                Text("\u{f8ff} Weather")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(textColor.opacity(0.15))
+                            }
                         }
 
                         if settings.backgroundMusic && (!nowPlayingTitle.isEmpty || isFollower) {
@@ -679,8 +685,11 @@ struct ContentView: View {
         // Skip throttle if we haven't successfully fetched yet
         let hasWeather = !weatherTemp.isEmpty
         // Only fetch every 15 minutes after first successful fetch
+        // Never throttle if weather hasn't loaded yet — keep retrying
         guard !hasWeather || Date().timeIntervalSince(lastWeatherFetch) > 900 else { return }
-        lastWeatherFetch = Date()
+        if hasWeather {
+            lastWeatherFetch = Date()
+        }
 
         Task {
             do {
@@ -695,9 +704,10 @@ struct ContentView: View {
                     weatherTemp = tempString
                     weatherCondition = condition
                     weatherSymbol = symbol
+                    lastWeatherFetch = Date()
                 }
             } catch {
-                // Silently fail — weather is optional
+                // Weather failed — don't set lastWeatherFetch so we retry next tick
             }
         }
     }
