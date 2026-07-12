@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		C07553922F7ECE9E00BD54C4 /* CryoKit in Frameworks */ = {isa = PBXBuildFile; productRef = C07553912F7ECE9E00BD54C4 /* CryoKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -56,7 +55,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C07553922F7ECE9E00BD54C4 /* CryoKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -125,7 +123,6 @@
 			);
 			name = "Tally Matrix Clock";
 			packageProductDependencies = (
-				C07553912F7ECE9E00BD54C4 /* CryoKit */,
 			);
 			productName = "Tally Matrix Clock";
 			productReference = C088BADE2EA15E1F00D73652 /* Tally Matrix Clock.app */;
@@ -210,7 +207,6 @@
 			mainGroup = C088BAD52EA15E1F00D73652;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				C07553832F7EC73300BD54C4 /* XCRemoteSwiftPackageReference "CryoKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = C088BADF2EA15E1F00D73652 /* Products */;
@@ -598,24 +594,7 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		C07553832F7EC73300BD54C4 /* XCRemoteSwiftPackageReference "CryoKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/fluhartyml/CryoKit.git";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
 
-/* Begin XCSwiftPackageProductDependency section */
-		C07553912F7ECE9E00BD54C4 /* CryoKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = C07553832F7EC73300BD54C4 /* XCRemoteSwiftPackageReference "CryoKit" */;
-			productName = CryoKit;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = C088BAD62EA15E1F00D73652 /* Project object */;
 }

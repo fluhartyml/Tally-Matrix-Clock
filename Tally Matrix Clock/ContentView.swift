@@ -12,7 +12,6 @@ import CoreLocation
 import MusicKit
 import MediaPlayer
 import AVKit
-import CryoKit
 
 struct ContentView: View {
     @StateObject private var settings = CloudSettings.shared
@@ -27,6 +26,7 @@ struct ContentView: View {
     @State private var currentSongTitle: String = ""
     @State private var currentArtistName: String = ""
     @State private var currentArtworkURL: URL? = nil
+    @State private var currentArtwork: Artwork? = nil
     @State private var showEasterEgg = true
     @State private var starburstOpacity: Double = 0.0
     @State private var engineeredOpacity: Double = 0.0
@@ -229,25 +229,13 @@ struct ContentView: View {
                     }
 
                     // Album art + song info
-                    if settings.backgroundMusic && currentArtworkURL != nil {
+                    if settings.backgroundMusic, let artwork = currentArtwork {
                         VStack(alignment: .leading, spacing: 6) {
-                            AsyncImage(url: currentArtworkURL) { phase in
-                                switch phase {
-                                case .success(let image):
-                                    image
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fill)
-                                        .frame(width: 140, height: 140)
-                                        .cornerRadius(10)
-                                        .colorMultiply(colorScheme == .crimson ? Color(red: 0.6, green: 0.0, blue: 0.05) : .white)
-                                default:
-                                    Image("CryoPlaceholder")
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fill)
-                                        .frame(width: 140, height: 140)
-                                        .cornerRadius(10)
-                                }
-                            }
+                            // ArtworkImage is Apple's supported render path; artwork.url()
+                            // returns a musickit:// URL AsyncImage can't load on the OS 27 beta.
+                            ArtworkImage(artwork, width: 140, height: 140)
+                                .cornerRadius(10)
+                                .colorMultiply(colorScheme == .crimson ? Color(red: 0.6, green: 0.0, blue: 0.05) : .white)
 
                             if !currentSongTitle.isEmpty {
                                 Text(currentSongTitle)
@@ -643,6 +631,7 @@ struct ContentView: View {
         currentSongTitle = ""
         currentArtistName = ""
         currentArtworkURL = nil
+        currentArtwork = nil
     }
 
     func updateNowPlayingInfo() {
@@ -652,6 +641,7 @@ struct ContentView: View {
                 currentSongTitle = ""
                 currentArtistName = ""
                 currentArtworkURL = nil
+                currentArtwork = nil
             }
             return
         }
@@ -663,8 +653,10 @@ struct ContentView: View {
                 currentArtistName = artist
                 if let artwork = entry.artwork {
                     currentArtworkURL = artwork.url(width: 240, height: 240)
+                    currentArtwork = artwork
                 } else {
                     currentArtworkURL = nil
+                    currentArtwork = nil
                 }
             }
         }

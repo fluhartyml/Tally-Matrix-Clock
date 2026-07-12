@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import CryoKit
 
 struct CryoSleepTimerPicker: View {
     @Bindable var player: MusicPlaybackManager
@@ -47,6 +46,11 @@ struct CryoSleepTimerPicker: View {
                                 .strokeBorder(border.opacity(0.4), lineWidth: 1)
                         )
                 }
+            }
+        }
+        .onChange(of: player.sleepTimerEnd) { _, newValue in
+            if newValue == nil {
+                selectedSleepTimerRaw = 0
             }
         }
     }
