@@ -84,10 +84,11 @@ struct SettingsView: View {
     }
 
     /// REM: any time of day (his 11-24 "doesnt allow you to put your own time in"). Left/Right on the
-    /// remote steps 15 minutes; a click also steps forward. One focusable row, so Left/Right never
-    /// move focus away. VoiceOver gets the same steps as an adjustable control.
+    /// remote steps 15 minutes; a click jumps forward a whole hour (his 11-24 "yes do the hour click").
+    /// One focusable row, so Left/Right never move focus away. VoiceOver gets the 15-minute steps
+    /// as an adjustable control.
     private func timeStepper(_ minutes: Int, name: String, action: @escaping (Int) -> Void) -> some View {
-        Button { action(NightMode.stepped(minutes, by: 1)) } label: {
+        Button { action(NightMode.stepped(minutes, by: 60 / NightMode.timeStep)) } label: {
             HStack {
                 Image(systemName: "chevron.left")
                 Spacer()

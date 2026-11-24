@@ -357,5 +357,7 @@ struct NightModeStepperTests {
         #expect(NightMode.stepped(23 * 60 + 45, by: 1) == 0)
         #expect(NightMode.stepped(0, by: -1) == 23 * 60 + 45)
         #expect(NightMode.timeLabel(NightMode.stepped(7 * 60, by: 2)) == "7:30 AM")
+        // A click jumps one hour (his 11-24): 11 PM + click → Midnight.
+        #expect(NightMode.stepped(23 * 60, by: 60 / NightMode.timeStep) == 0)
     }
 }
