@@ -79,6 +79,13 @@ struct ContentView: View {
     @State private var sunFetchedThisLaunch = false
     @State private var lastSunAttempt = Date.distantPast
 
+    // REM (roadmap 023, locked 11-23): OLED burn-in guard — the time/date/weather text and the
+    // Leader badge drift a few points every few minutes so no pixel holds the same text all night.
+    @State private var burnInOffset: CGSize = .zero
+    @State private var lastBurnInShift = Date()
+    static let burnInEvery: TimeInterval = 180
+    static let burnInReach: CGFloat = 6
+
     @StateObject private var locationManager = LocationManager()
 
     /// The look on screen right now: the night theme while Night Mode is on, else the day theme.
@@ -283,6 +290,8 @@ struct ContentView: View {
                     }
                 }
 
+                .offset(burnInOffset)   // 023
+
                 Spacer().frame(height: 60)
             }
             .opacity(clockOpacity * nightDim)
@@ -311,6 +320,7 @@ struct ContentView: View {
                             )
                             .padding(.trailing, 40)
                             .padding(.bottom, 30)
+                            .offset(burnInOffset)   // 023
                     }
                 }
                 .opacity(clockOpacity * nightDim)
@@ -396,6 +406,14 @@ struct ContentView: View {
         .onReceive(timer) { _ in
             currentTime = Date()
             evaluateNight()
+
+            if Date().timeIntervalSince(lastBurnInShift) >= Self.burnInEvery {
+                lastBurnInShift = Date()
+                let r = Self.burnInReach
+                withAnimation(.easeInOut(duration: 3.0)) {   // slow enough that nobody sees it move
+                    burnInOffset = CGSize(width: .random(in: -r...r), height: .random(in: -r...r))
+                }
+            }
 
             // Check if any digit changed — if so, update patterns immediately
             // REM: the 12/24-hour setting rides along so switching it reshuffles at once —
