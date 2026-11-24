@@ -13,10 +13,13 @@
 //  Name:           Tally Matrix Clock
 //  App Store ID:   6754099799 (LIVE)
 //  Platform:       tvOS
-//  Version:        1.1
+//  Version:        3.0 (minimum tvOS 27)
+//  Build:          = git rev-list --count HEAD, stamped by Scripts/stamp-build.sh via the
+//                  post-commit hook (Scripts/install-hooks.sh). Never hand-stamp.
 //  Language:       Swift, SwiftUI
-//  GitHub:         fluhartyml/TallyMatrices (note: repo name differs from app name)
-//  Location:       /Users/michaelfluharty/Developer/Tally-Matrix-Clock/
+//  GitHub:         fluhartyml/Tally-Matrix-Clock
+//  Location:       ~/Developer.complex/Tally-Matrix-Clock/
+//  Roadmap:        CLI Claude.Apartment/Workshop/Tally-Matrix-Clock-Roadmap.md (locked 2026 NOV 23)
 
 // ============================================================================
 // MARK: - APP STORE CONNECT
@@ -30,8 +33,9 @@
 //  Bundle ID:          (check Xcode project)
 //  Category:           Utilities / Entertainment
 //  URL:                https://apps.apple.com/us/app/tally-matrix-clock/id6754099799
-//  Current Version:    2.4
-//  Status:             v2.4 submitted APR 02 4:21 PM, waiting for review
+//  Current Version:    3.0 (in the project; build 64 committed 2026 OCT 31)
+//  Status:             ⚠️ verify — App Store status of 3.0 not confirmed here.
+//                      Apple's public lookup read 2.4.1 on 2026 NOV 15 (Card-Catalog).
 //
 //  Subtitle:           Matrix Clock for AppleTV
 //
@@ -55,14 +59,35 @@
 //  License:            GPL v3
 //
 //  Version History:
+//    v3.0 (2026-09-14) — tvOS 27 minimum. Since 2.4.1: CryoKit retired, its 3 files
+//      inlined into the app + now-playing artwork fixed (07-12); build number = commit
+//      count via post-commit hook (09-04, 09-08); no non-exempt encryption declared so
+//      TestFlight stops asking export compliance (10-31).
 //    v2.4 (2026-04-02) — CryoKit data layer, shuffle/repeat, playlist reveal,
 //      heartbeat, focus highlight, normalized codebase, CryoTunes placeholder art
 //    v2.3.1 (2026-03-27) — Fixed stations, 80+ available, new genres
 //    (earlier history predates this tracking)
 //
 // ============================================================================
-// MARK: - CURRENT STATUS (APR 02 2026)
+// MARK: - CURRENT STATUS (NOV 23 2026)
 // ============================================================================
+//
+//  Roadmap locked with Michael 2026 NOV 23 (Grok's survey, reviewed line by line).
+//  Build order: commit build + these notes → silent-update permission → real tests →
+//  one weather path + one sleep-timer path → private iCloud (privacy page edited in
+//  the same work) → sync tests → Focus test on a real Apple TV → Auto Night Mode
+//  (default theme Crimson) → OLED burn-in shift → remote left/right cycles themes.
+//
+//  ⛔ LOCKED (his word: "be explicit so it doesnt get reverted on accident in the
+//  future"): the leader's 30-second check-in lives in its OWN CloudKit record, never in
+//  the settings record, and never gets a silent-push subscription.
+//
+//  Today (before the roadmap): settings live in ONE shared PUBLIC CloudKit record
+//  (CloudSettings.swift) that every household reads every 1 s — a privacy problem.
+//
+//  CryoKit was retired 2026 JUL 12 (files inlined); the APR 02 notes below are history.
+//
+//  ---- APR 02 2026 status (history) ----
 //
 //  Hard reset to v2.3.1 (f5f7404) on APR 02 2026.
 //  All MAR 31 CryoKit migration work was rolled back for a clean start.
@@ -119,9 +144,18 @@
 // MARK: - FILE STRUCTURE
 // ============================================================================
 //
-//  Tally Matrix Clock/
+//  Tally Matrix Clock/            (as of 2026 NOV 23)
 //    Tally_Matrix_ClockApp.swift  — App entry point
-//    ContentView.swift            — Main clock display and settings
+//    ContentView.swift            — Main clock display, remote commands, weather fetch
+//    SettingsView.swift           — Settings screen
+//    CloudSettings.swift          — CloudKit settings sync, leader/follower, remote requests
+//    Models.swift                 — Color schemes and option enums
+//    TallyMatrixViews.swift       — The tally matrices
+//    GlyphRainView.swift          — Falling glyphs
+//    ClaudeStarburstView.swift    — Opening animation
+//    LocationManager.swift        — Location (one of two location paths; see roadmap 013)
+//    CryoSleepTimerPicker.swift, CryoStationPicker.swift, CryoTransportControls.swift
+//    Engine/                      — WeatherManager, MusicStationCatalog, MusicPlaybackManager
 
 // ============================================================================
 // MARK: - PLANNED UPDATES
@@ -176,4 +210,6 @@
 //
 //  2026 MAR 18 — Developer notes file created with project details, planned
 //                updates, icon history, and About This App section. (Claude Code)
+//  2026 NOV 23 — Brought to v3.0: identity, repo name, path, build-number hook,
+//                version history, current status + locked roadmap, file list. (Claude Code)
 //
