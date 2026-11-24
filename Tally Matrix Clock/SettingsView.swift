@@ -83,6 +83,44 @@ struct SettingsView: View {
         }
     }
 
+    /// REM: any time of day (his 11-24 "doesnt allow you to put your own time in"). Left/Right on the
+    /// remote steps 15 minutes; a click also steps forward. One focusable row, so Left/Right never
+    /// move focus away. VoiceOver gets the same steps as an adjustable control.
+    private func timeStepper(_ minutes: Int, name: String, action: @escaping (Int) -> Void) -> some View {
+        Button { action(NightMode.stepped(minutes, by: 1)) } label: {
+            HStack {
+                Image(systemName: "chevron.left")
+                Spacer()
+                Text(NightMode.timeLabel(minutes))
+                    .lineLimit(1)
+                Spacer()
+                Image(systemName: "chevron.right")
+            }
+            .font(.system(size: 32))
+            .padding(.vertical, 20)
+            .padding(.horizontal, 24)
+            .background(Color.gray.opacity(0.3))
+            .cornerRadius(8)
+        }
+        .buttonStyle(SettingsFocusButtonStyle())
+        .onMoveCommand { direction in
+            switch direction {
+            case .left: action(NightMode.stepped(minutes, by: -1))
+            case .right: action(NightMode.stepped(minutes, by: 1))
+            default: break
+            }
+        }
+        .accessibilityLabel(name)
+        .accessibilityValue(NightMode.timeLabel(minutes))
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: action(NightMode.stepped(minutes, by: 1))
+            case .decrement: action(NightMode.stepped(minutes, by: -1))
+            @unknown default: break
+            }
+        }
+    }
+
     /// Tells the user which rule is in charge, including a fallback (020).
     private var sunCaption: String {
         guard let sun = SunTimes.load(), sun.isUsable else {
@@ -117,13 +155,13 @@ struct SettingsView: View {
                     Text("Starts")
                         .font(.system(size: 36))
                         .foregroundColor(tint)
-                    choiceRow(NightMode.startChoices, selected: settings.nightStartMinutes, label: NightMode.timeLabel) {
+                    timeStepper(settings.nightStartMinutes, name: "Starts") {
                         set(\.nightStartMinutes, key: "nightStartMinutes", $0)
                     }
                     Text("Ends")
                         .font(.system(size: 36))
                         .foregroundColor(tint)
-                    choiceRow(NightMode.endChoices, selected: settings.nightEndMinutes, label: NightMode.timeLabel) {
+                    timeStepper(settings.nightEndMinutes, name: "Ends") {
                         set(\.nightEndMinutes, key: "nightEndMinutes", $0)
                     }
                 } else {

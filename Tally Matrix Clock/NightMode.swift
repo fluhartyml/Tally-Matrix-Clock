@@ -30,9 +30,11 @@ enum NightMode {
     /// Brightness choices, in percent. 100 = no dimming.
     static let brightnessChoices = [25, 50, 75, 100]
 
-    // REM: the hour buttons offered in Settings (minutes after midnight). Defaults are 10 PM and 7 AM.
-    static let startChoices = [20 * 60, 21 * 60, 22 * 60, 23 * 60, 0]
-    static let endChoices = [5 * 60, 6 * 60, 7 * 60, 8 * 60, 9 * 60]
+    // REM: 2026 NOV 24 — the five preset hour buttons are gone. His word: "bedtime schedule is kind
+    // of rigid and doesnt allow you to put your own time in". Starts and Ends are now any time of
+    // day, stepped with Left/Right on the remote in 15-minute steps (tvOS has no time picker).
+    // Defaults stay 10 PM and 7 AM.
+    static let timeStep = 15
     static let defaultStart = 22 * 60
     static let defaultEnd = 7 * 60
     static let defaultBrightness = 50
@@ -70,6 +72,12 @@ enum NightMode {
         // An empty schedule (start == end) means the daytime look — the last fallback.
         let night = window(start: startMinutes, end: endMinutes, contains: minute)
         return (night, trigger == .sun ? .scheduleFallback : .schedule)
+    }
+
+    /// Moves a time of day by `steps` × 15 minutes, wrapping around midnight (11:45 PM + 1 → 12:00 AM).
+    static func stepped(_ minutes: Int, by steps: Int) -> Int {
+        let day = 24 * 60
+        return ((minutes + steps * timeStep) % day + day) % day
     }
 
     static func timeLabel(_ minutes: Int) -> String {

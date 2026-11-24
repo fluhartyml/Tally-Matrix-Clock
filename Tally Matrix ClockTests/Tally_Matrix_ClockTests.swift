@@ -348,3 +348,14 @@ struct RemoteThemeStepping {
         #expect(Set(seen.map(\.rawValue)).count == ColorSchemeOption.allCases.count)
     }
 }
+
+@Suite("Night Mode time steppers (his 11-24: any time, not five presets)")
+struct NightModeStepperTests {
+    @Test("Steps 15 minutes and wraps around midnight both ways")
+    func steps() {
+        #expect(NightMode.stepped(22 * 60, by: 1) == 22 * 60 + 15)
+        #expect(NightMode.stepped(23 * 60 + 45, by: 1) == 0)
+        #expect(NightMode.stepped(0, by: -1) == 23 * 60 + 45)
+        #expect(NightMode.timeLabel(NightMode.stepped(7 * 60, by: 2)) == "7:30 AM")
+    }
+}
