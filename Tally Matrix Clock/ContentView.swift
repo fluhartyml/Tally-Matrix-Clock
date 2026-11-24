@@ -67,7 +67,7 @@ struct ContentView: View {
     @State private var patterns: [Int: Set<Int>] = [:]
     @State private var colors: [Int: [Color]] = [:]
     @State private var lastPatternChange = Date()
-    @State private var lastDigits: [Int] = [-1, -1, -1, -1]
+    @State private var lastDigits: [Int] = [-1, -1, -1, -1, -1]
 
     @State private var weatherCondition: String = ""
     @State private var weatherTemp: String = ""
@@ -369,7 +369,9 @@ struct ContentView: View {
             currentTime = Date()
 
             // Check if any digit changed — if so, update patterns immediately
-            let currentDigits = [hoursTens, hoursOnes, minutesTens, minutesOnes]
+            // REM: the 12/24-hour setting rides along so switching it reshuffles at once —
+            // otherwise a 24-hour pattern could keep the PM-dot square after switching.
+            let currentDigits = [hoursTens, hoursOnes, minutesTens, minutesOnes, settings.use24Hour ? 1 : 0]
             let digitsChanged = currentDigits != lastDigits
 
             if digitsChanged {
@@ -511,24 +513,14 @@ struct ContentView: View {
         }
     }
     
-    var displayHour: Int {
-        let hour = Calendar.current.component(.hour, from: currentTime)
-        if settings.use24Hour {
-            return hour
-        } else {
-            let hour12 = hour % 12
-            return hour12 == 0 ? 12 : hour12
-        }
-    }
-    
-    var isPM: Bool {
-        Calendar.current.component(.hour, from: currentTime) >= 12
-    }
-    
-    var hoursTens: Int { displayHour / 10 }
-    var hoursOnes: Int { displayHour % 10 }
-    var minutesTens: Int { Calendar.current.component(.minute, from: currentTime) / 10 }
-    var minutesOnes: Int { Calendar.current.component(.minute, from: currentTime) % 10 }
+    // REM: digit math lives in TallyTime.swift so it can be tested (roadmap 014).
+    var tallyTime: TallyTime { TallyTime(date: currentTime, use24Hour: settings.use24Hour) }
+    var displayHour: Int { tallyTime.displayHour }
+    var isPM: Bool { tallyTime.isPM }
+    var hoursTens: Int { tallyTime.hoursTens }
+    var hoursOnes: Int { tallyTime.hoursOnes }
+    var minutesTens: Int { tallyTime.minutesTens }
+    var minutesOnes: Int { tallyTime.minutesOnes }
 
     var baseTimeString: String {
         let format = settings.use24Hour ? "HH:mm" : "h:mm a"
@@ -705,10 +697,11 @@ struct ContentView: View {
     }
     
     func updatePatterns() {
-        patterns[0] = randomPattern(for: hoursTens, totalSquares: 3)
-        patterns[1] = randomPattern(for: hoursOnes, totalSquares: 9)
-        patterns[2] = randomPattern(for: minutesTens, totalSquares: 9)
-        patterns[3] = randomPattern(for: minutesOnes, totalSquares: 9)
+        // REM: 12-hour mode keeps the bottom square for the PM dot (TallyTime.hoursTensSquares).
+        patterns[0] = TallyTime.randomPattern(for: hoursTens, totalSquares: tallyTime.hoursTensSquares)
+        patterns[1] = TallyTime.randomPattern(for: hoursOnes, totalSquares: 9)
+        patterns[2] = TallyTime.randomPattern(for: minutesTens, totalSquares: 9)
+        patterns[3] = TallyTime.randomPattern(for: minutesOnes, totalSquares: 9)
 
         // For singleColor, pick one color and share across all matrices
         let sharedColor: Color? = colorScheme == .singleColor
@@ -721,14 +714,6 @@ struct ContentView: View {
         colors[3] = generateColors(for: 3, count: 9, shared: sharedColor)
     }
     
-    func randomPattern(for value: Int, totalSquares: Int) -> Set<Int> {
-        guard value > 0 else { return [] }
-        var pattern = Set<Int>()
-        while pattern.count < value {
-            pattern.insert(Int.random(in: 0..<totalSquares))
-        }
-        return pattern
-    }
     
     func generateColors(for matrixIndex: Int, count: Int, shared: Color? = nil) -> [Color] {
         let primaryColors: [Color] = [.red, .green, .blue]

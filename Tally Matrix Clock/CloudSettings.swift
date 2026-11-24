@@ -54,12 +54,28 @@ class CloudSettings: ObservableObject {
     @Published var requestedStation: String { didSet { if !initializing { pushRemoteCommand() } } }
     @Published var requestedSettings: String { didSet { if !initializing { pushRemoteCommand() } } }
 
+    // REM: the request wire format is two pure functions so it can be tested without
+    // touching CloudKit (roadmap 014). Tests must never write to the shared record.
+    /// Encodes a follower's setting request. The timestamp makes a repeat of the same value still register.
+    static func encodeSettingRequest(key: String, value: Any, timestamp: TimeInterval = Date().timeIntervalSince1970) -> String? {
+        let dict: [String: Any] = ["key": key, "value": value, "ts": timestamp]
+        guard JSONSerialization.isValidJSONObject(dict),
+              let data = try? JSONSerialization.data(withJSONObject: dict) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    /// Decodes a setting request; nil when it is empty or malformed.
+    static func decodeSettingRequest(_ json: String) -> (key: String, value: Any?)? {
+        guard !json.isEmpty,
+              let data = json.data(using: .utf8),
+              let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let key = dict["key"] as? String else { return nil }
+        return (key, dict["value"])
+    }
+
     /// Followers call this to request any setting change from the leader
     func requestSettingChange(key: String, value: Any) {
-        // Include a timestamp so repeated requests for the same value still trigger onChange
-        let dict: [String: Any] = ["key": key, "value": value, "ts": Date().timeIntervalSince1970]
-        if let data = try? JSONSerialization.data(withJSONObject: dict),
-           let json = String(data: data, encoding: .utf8) {
+        if let json = Self.encodeSettingRequest(key: key, value: value) {
             requestedSettings = json
         }
     }
@@ -67,12 +83,12 @@ class CloudSettings: ObservableObject {
     /// Leader applies a requested setting change
     func applyRequestedSettings() {
         guard !requestedSettings.isEmpty else { return }
-        guard let data = requestedSettings.data(using: .utf8),
-              let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let key = dict["key"] as? String else {
+        guard let request = Self.decodeSettingRequest(requestedSettings) else {
             requestedSettings = ""
             return
         }
+        let key = request.key
+        let dict: [String: Any] = ["value": request.value as Any]
 
         switch key {
         case "colorSchemeRaw":
@@ -148,6 +164,13 @@ class CloudSettings: ObservableObject {
 
         initializing = false
 
+        // REM: under a test run, never talk to CloudKit — today every household shares one
+        // public record, and a test must not read or write it (roadmap 014, 2026 NOV 23).
+        if Self.isRunningTests {
+            cloudReady = true
+            return
+        }
+
         // Pull from CloudKit to get the real leader state
         pullFromCloud()
 
@@ -155,11 +178,14 @@ class CloudSettings: ObservableObject {
         startPolling()
     }
 
+    static let isRunningTests = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+
     // MARK: - CloudKit Push
 
     private func syncToCloud() {
         guard !initializing else { return }
         saveLocally()
+        guard !Self.isRunningTests else { return }
 
         // Only the leader (or independent devices) push to CloudKit
         guard leaderDeviceName.isEmpty || isLeader else { return }
@@ -299,6 +325,7 @@ class CloudSettings: ObservableObject {
 
     // Any device (leader or follower) can push remote commands
     private func pushRemoteCommand() {
+        guard !Self.isRunningTests else { return }
         lastPushTime = Date()
         container.publicCloudDatabase.fetch(withRecordID: recordID) { [weak self] record, error in
             guard let self = self, let record = record else { return }
