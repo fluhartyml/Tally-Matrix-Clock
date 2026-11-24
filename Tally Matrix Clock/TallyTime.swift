@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import AVFoundation
 
 struct TallyTime: Equatable {
     let hour24: Int      // 0...23
@@ -59,5 +60,31 @@ struct TallyTime: Equatable {
     static func randomPattern(for value: Int, totalSquares: Int) -> Set<Int> {
         let count = min(max(value, 0), totalSquares)
         return Set((0..<totalSquares).shuffled().prefix(count))
+    }
+}
+
+// REM 2026 NOV 24 — his word: "say time with center button long press". The clock speaks the time
+// itself, no VoiceOver needed (Apple lets no app switch VoiceOver on, so this is the one-stop-shop
+// answer inside Tally). Play/Pause stays on the music; holding the center (click) button speaks.
+// Background music is turned down (ducked) while it speaks, then comes back.
+final class TimeSpeaker: NSObject, AVSpeechSynthesizerDelegate {
+    static let shared = TimeSpeaker()
+    private let synth = AVSpeechSynthesizer()
+
+    override init() {
+        super.init()
+        synth.delegate = self
+    }
+
+    func say(_ time: TallyTime) {
+        synth.stopSpeaking(at: .immediate)
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+        try? session.setActive(true)
+        synth.speak(AVSpeechUtterance(string: "It's \(time.spokenTime)"))
+    }
+
+    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 }

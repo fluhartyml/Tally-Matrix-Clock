@@ -18,6 +18,9 @@ struct ContentView: View {
     @State private var playerManager = MusicPlaybackManager()
     @State private var currentTime = Date()
     @State private var showSettings = false
+    // REM 11-24: per-TV switch (stays on this Apple TV, not synced) — "say time with center button long press".
+    @AppStorage("sayTimeOnLongPress") private var sayTimeOnLongPress = false
+    @State private var lastLongPress = Date.distantPast
     @State private var textTargets: [TextTarget] = []
     @State private var musicAuthorized = false
     @State private var nowPlayingTitle: String = ""
@@ -462,6 +465,8 @@ struct ContentView: View {
             updateNowPlayingInfo()
         }
         .onTapGesture {
+            // REM 11-24: the release of a long press must not also skip a song or open Settings.
+            if Date().timeIntervalSince(lastLongPress) < 1.0 { return }
             if isFollower && settings.backgroundMusic {
                 // Follower: assume leader is playing, send skip
                 settings.skipRequested = true
@@ -481,6 +486,11 @@ struct ContentView: View {
             case .right: stepTheme(by: 1)
             default: showSettings = true
             }
+        }
+        .onLongPressGesture(minimumDuration: 0.6) {
+            guard sayTimeOnLongPress else { return }
+            lastLongPress = Date()
+            TimeSpeaker.shared.say(tallyTime)
         }
         .onPlayPauseCommand {
             if isFollower {

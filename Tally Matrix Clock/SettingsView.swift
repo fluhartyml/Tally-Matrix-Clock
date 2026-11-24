@@ -12,6 +12,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var settings: CloudSettings
     @Bindable var playerManager: MusicPlaybackManager
+    @AppStorage("sayTimeOnLongPress") private var sayTimeOnLongPress = false
 
     private var colorScheme: ColorSchemeOption {
         ColorSchemeOption(rawValue: settings.colorSchemeRaw) ?? .randomRGB
@@ -255,6 +256,18 @@ struct SettingsView: View {
                         }
                         // REM: focusSection makes the whole row catch focus. The toggle sits at the far right,
                         // so without it Up from a left-side button ("Small") found nothing above and got stuck. (His report 11-23.)
+                        .focusSection()
+
+                        // REM 11-24 — his wording: "say time with center button long press". Per TV, not synced.
+                        HStack {
+                            Text("Say Time with Center Button Long Press")
+                                .font(.system(size: 36))
+                                .foregroundColor(tint)
+                            Spacer()
+                            Toggle("Say Time", isOn: $sayTimeOnLongPress)
+                                .labelsHidden()
+                                .accessibilityLabel("Say Time")
+                        }
                         .focusSection()
 
                         HStack {
