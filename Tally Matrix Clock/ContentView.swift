@@ -24,6 +24,11 @@ struct ContentView: View {
     // REM 11-24: "Say Time Automatically" (his "quarter, half or hour"), per TV like the long-press switch.
     @AppStorage("sayTimeEvery") private var sayTimeEveryRaw = SayTimeEvery.off.rawValue
     @State private var lastAnnouncedMinute = -1   // minute of the day last spoken, so a minute speaks once
+    // REM 11-24 — his "if the music is playing should be a toggle" and "whisper during sleep mode toggle". Per TV.
+    @AppStorage("sayTimeWithMusic") private var sayTimeWithMusic = true
+    @AppStorage("whisperDuringNight") private var whisperDuringNight = false
+
+    private var whisperNow: Bool { whisperDuringNight && isNight }
     @State private var textTargets: [TextTarget] = []
     @State private var musicAuthorized = false
     @State private var nowPlayingTitle: String = ""
@@ -423,8 +428,10 @@ struct ContentView: View {
                 // REM: the first tick after launch only records the minute, so opening the app at 9:45 is silent.
                 let isFirstTick = lastAnnouncedMinute == -1
                 lastAnnouncedMinute = minuteOfDay
-                if !isFirstTick, (SayTimeEvery(rawValue: sayTimeEveryRaw) ?? .off).announces(minute: t.minute) {
-                    TimeSpeaker.shared.say(t)
+                let musicPlaying = ApplicationMusicPlayer.shared.state.playbackStatus == .playing
+                if !isFirstTick, (SayTimeEvery(rawValue: sayTimeEveryRaw) ?? .off).announces(minute: t.minute),
+                   sayTimeWithMusic || !musicPlaying {
+                    TimeSpeaker.shared.say(t, whisper: whisperNow)
                 }
             }
 
@@ -501,11 +508,17 @@ struct ContentView: View {
             default: showSettings = true
             }
         }
-        .onLongPressGesture(minimumDuration: 0.6) {
-            guard sayTimeOnLongPress else { return }
-            lastLongPress = Date()
-            TimeSpeaker.shared.say(tallyTime)
-        }
+        // REM 11-24 — his report on build 82: "long press isnt talking". The tap handler above won the
+        // press, so a plain onLongPressGesture never fired. simultaneousGesture lets both see it; the
+        // lastLongPress guard in the tap handler stops the release from also skipping or opening Settings.
+        // A hold is a deliberate ask, so it speaks even while music plays (that switch is for the automatic one).
+        .simultaneousGesture(
+            LongPressGesture(minimumDuration: 0.6).onEnded { _ in
+                guard sayTimeOnLongPress else { return }
+                lastLongPress = Date()
+                TimeSpeaker.shared.say(tallyTime, whisper: whisperNow)
+            }
+        )
         .onPlayPauseCommand {
             if isFollower {
                 // Follower sends pause request to leader via CloudKit

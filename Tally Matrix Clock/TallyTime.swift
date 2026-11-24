@@ -76,12 +76,29 @@ final class TimeSpeaker: NSObject, AVSpeechSynthesizerDelegate {
         synth.delegate = self
     }
 
-    func say(_ time: TallyTime) {
+    // REM 11-24 — his "it should be the apple tv default voice" / "i want it to use the system voice".
+    // Apple lets no app switch VoiceOver on or off, so: with VoiceOver on, the TV's VoiceOver voice
+    // speaks (prefersAssistiveTechnologySettings); with it off, the best-quality voice downloaded on
+    // that TV for its language. Apps can't read which voice VoiceOver uses, so this is the closest.
+    static let whisperVolume: Float = 0.25
+
+    static func bestVoice(from voices: [AVSpeechSynthesisVoice], language: String) -> AVSpeechSynthesisVoice? {
+        voices.filter { $0.language == language }
+              .max { $0.quality.rawValue < $1.quality.rawValue }
+    }
+
+    func say(_ time: TallyTime, whisper: Bool = false) {
         synth.stopSpeaking(at: .immediate)
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
         try? session.setActive(true)
-        synth.speak(AVSpeechUtterance(string: "It's \(time.spokenTime)"))
+        let utterance = AVSpeechUtterance(string: "It's \(time.spokenTime)")
+        utterance.prefersAssistiveTechnologySettings = true
+        utterance.voice = Self.bestVoice(from: AVSpeechSynthesisVoice.speechVoices(),
+                                         language: AVSpeechSynthesisVoice.currentLanguageCode())
+        // REM 11-24 — his "whisper during sleep mode toggle": quieter while Night Mode is showing.
+        if whisper { utterance.volume = Self.whisperVolume }
+        synth.speak(utterance)
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {

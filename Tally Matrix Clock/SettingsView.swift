@@ -14,6 +14,8 @@ struct SettingsView: View {
     @Bindable var playerManager: MusicPlaybackManager
     @AppStorage("sayTimeOnLongPress") private var sayTimeOnLongPress = false
     @AppStorage("sayTimeEvery") private var sayTimeEveryRaw = SayTimeEvery.off.rawValue
+    @AppStorage("sayTimeWithMusic") private var sayTimeWithMusic = true
+    @AppStorage("whisperDuringNight") private var whisperDuringNight = false
 
     private var colorScheme: ColorSchemeOption {
         ColorSchemeOption(rawValue: settings.colorSchemeRaw) ?? .randomRGB
@@ -280,6 +282,31 @@ struct SettingsView: View {
                                       label: { $0.label }) {
                                 sayTimeEveryRaw = $0.rawValue
                             }
+                        }
+                        .focusSection()
+
+                        // REM 11-24 — his "if the music is playing should be a toggle". Off = the automatic
+                        // announcement stays quiet while music plays. Per TV.
+                        HStack {
+                            Text("Say Time While Music Plays")
+                                .font(.system(size: 36))
+                                .foregroundColor(tint)
+                            Spacer()
+                            Toggle("With Music", isOn: $sayTimeWithMusic)
+                                .labelsHidden()
+                                .accessibilityLabel("With Music")
+                        }
+                        .focusSection()
+
+                        // REM 11-24 — his "whisper during sleep mode toggle": quieter while Night Mode shows. Per TV.
+                        HStack {
+                            Text("Whisper During Night Mode")
+                                .font(.system(size: 36))
+                                .foregroundColor(tint)
+                            Spacer()
+                            Toggle("Whisper", isOn: $whisperDuringNight)
+                                .labelsHidden()
+                                .accessibilityLabel("Whisper")
                         }
                         .focusSection()
 

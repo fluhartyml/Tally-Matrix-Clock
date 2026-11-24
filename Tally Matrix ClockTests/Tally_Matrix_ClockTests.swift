@@ -10,6 +10,7 @@
 
 import Foundation
 import CloudKit
+import AVFoundation
 import Testing
 @testable import Tally_Matrix_Clock
 
@@ -379,5 +380,17 @@ struct NightModeStepperTests {
         #expect(!SayTimeEvery.halfHour.announces(minute: 15))
         #expect(SayTimeEvery.quarterHour.announces(minute: 45))
         #expect(!SayTimeEvery.quarterHour.announces(minute: 41))
+    }
+
+    @Test("Best voice is the highest quality for the language (his 11-24 system voice)")
+    func bestVoice() {
+        let voices = AVSpeechSynthesisVoice.speechVoices()
+        let lang = AVSpeechSynthesisVoice.currentLanguageCode()
+        if let best = TimeSpeaker.bestVoice(from: voices, language: lang) {
+            #expect(best.language == lang)
+            #expect(voices.filter { $0.language == lang }.allSatisfy { $0.quality.rawValue <= best.quality.rawValue })
+        }
+        #expect(TimeSpeaker.bestVoice(from: [], language: lang) == nil)
+        #expect(TimeSpeaker.whisperVolume < 1.0)
     }
 }
