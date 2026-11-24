@@ -164,6 +164,10 @@ struct ContentView: View {
                     Spacer().frame(width: 40)
                     TallyMatrix3x3(value: minutesOnes, pattern: patterns[3] ?? [], colors: colors[3] ?? [], glow: glowEnabled)
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Time")
+                .accessibilityValue(tallyTime.spokenTime)
+                .accessibilityIdentifier("tallyFace")
                 
                 Spacer()
                 

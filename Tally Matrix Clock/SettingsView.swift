@@ -79,6 +79,7 @@ struct SettingsView: View {
                         .cornerRadius(8)
                 }
                 .buttonStyle(SettingsFocusButtonStyle())
+                .accessibilityAddTraits(selected == v ? .isSelected : [])
             }
         }
     }
@@ -92,7 +93,7 @@ struct SettingsView: View {
             HStack {
                 Image(systemName: "chevron.left")
                 Spacer()
-                Text(NightMode.timeLabel(minutes))
+                Text(NightMode.timeLabel(minutes, use24Hour: settings.use24Hour))
                     .lineLimit(1)
                 Spacer()
                 Image(systemName: "chevron.right")
@@ -112,7 +113,7 @@ struct SettingsView: View {
             }
         }
         .accessibilityLabel(name)
-        .accessibilityValue(NightMode.timeLabel(minutes))
+        .accessibilityValue(NightMode.timeLabel(minutes, use24Hour: settings.use24Hour))
         .accessibilityAdjustableAction { direction in
             switch direction {
             case .increment: action(NightMode.stepped(minutes, by: 1))
@@ -127,7 +128,7 @@ struct SettingsView: View {
         guard let sun = SunTimes.load(), sun.isUsable else {
             return "Sun times not available yet. Using the bedtime schedule until they arrive."
         }
-        let times = "Sunset \(NightMode.timeLabel(sun.sunsetMinutes)) · Sunrise \(NightMode.timeLabel(sun.sunriseMinutes))"
+        let times = "Sunset \(NightMode.timeLabel(sun.sunsetMinutes, use24Hour: settings.use24Hour)) · Sunrise \(NightMode.timeLabel(sun.sunriseMinutes, use24Hour: settings.use24Hour))"
         return sun.isFrom(Date()) ? times : "\(times) (last saved)"
     }
 
@@ -137,7 +138,7 @@ struct SettingsView: View {
                 .font(.system(size: 36))
                 .foregroundColor(tint)
             Spacer()
-            Toggle("", isOn: followerBinding(for: \.nightModeEnabled, key: "nightModeEnabled"))
+            Toggle("Night Mode", isOn: followerBinding(for: \.nightModeEnabled, key: "nightModeEnabled"))
                 .labelsHidden()
         }
         // REM: same focus fix as the other switch rows (his report 11-23).
@@ -188,6 +189,7 @@ struct SettingsView: View {
                         .padding(.vertical, 8)
                     }
                     .buttonStyle(SettingsFocusButtonStyle())
+                    .accessibilityAddTraits(settings.nightColorSchemeRaw == opt.rawValue ? .isSelected : [])
                 }
 
                 Text("Night Brightness")
@@ -233,7 +235,7 @@ struct SettingsView: View {
                                 .font(.system(size: 36))
                                 .foregroundColor(tint)
                             Spacer()
-                            Toggle("", isOn: followerBinding(for: \.showBase10, key: "showBase10"))
+                            Toggle("Show Base-10 Time", isOn: followerBinding(for: \.showBase10, key: "showBase10"))
                                 .labelsHidden()
                         }
                         // REM: focusSection makes the whole row catch focus. The toggle sits at the far right,
@@ -245,7 +247,7 @@ struct SettingsView: View {
                                 .font(.system(size: 36))
                                 .foregroundColor(tint)
                             Spacer()
-                            Toggle("", isOn: followerBinding(for: \.use24Hour, key: "use24Hour"))
+                            Toggle("24-Hour Clock", isOn: followerBinding(for: \.use24Hour, key: "use24Hour"))
                                 .labelsHidden()
                         }
                         // REM: focusSection makes the whole row catch focus. The toggle sits at the far right,
@@ -257,7 +259,7 @@ struct SettingsView: View {
                                 .font(.system(size: 36))
                                 .foregroundColor(tint)
                             Spacer()
-                            Toggle("", isOn: followerBinding(for: \.showDate, key: "showDate"))
+                            Toggle("Show Date", isOn: followerBinding(for: \.showDate, key: "showDate"))
                                 .labelsHidden()
                         }
                         // REM: focusSection makes the whole row catch focus. The toggle sits at the far right,
@@ -269,7 +271,7 @@ struct SettingsView: View {
                                 .font(.system(size: 36))
                                 .foregroundColor(tint)
                             Spacer()
-                            Toggle("", isOn: followerBinding(for: \.showWeather, key: "showWeather"))
+                            Toggle("Show Weather", isOn: followerBinding(for: \.showWeather, key: "showWeather"))
                                 .labelsHidden()
                         }
                         // REM: focusSection makes the whole row catch focus. The toggle sits at the far right,
@@ -286,7 +288,7 @@ struct SettingsView: View {
                                 .font(.system(size: 36))
                                 .foregroundColor(tint)
                             Spacer()
-                            Toggle("", isOn: followerBinding(for: \.showGlyphRain, key: "showGlyphRain"))
+                            Toggle("Glyph Rain", isOn: followerBinding(for: \.showGlyphRain, key: "showGlyphRain"))
                                 .labelsHidden()
                         }
                         // REM: focusSection makes the whole row catch focus. The toggle sits at the far right,
@@ -316,6 +318,7 @@ struct SettingsView: View {
                                                 .cornerRadius(8)
                                         }
                                         .buttonStyle(SettingsFocusButtonStyle())
+                                        .accessibilityAddTraits(settings.glyphRainSizeRaw == size.rawValue ? .isSelected : [])
                                     }
                                 }
                             }
@@ -328,7 +331,7 @@ struct SettingsView: View {
                                 .font(.system(size: 36))
                                 .foregroundColor(tint)
                             Spacer()
-                            Toggle("", isOn: followerBinding(for: \.backgroundMusic, key: "backgroundMusic"))
+                            Toggle("Background Music", isOn: followerBinding(for: \.backgroundMusic, key: "backgroundMusic"))
                                 .labelsHidden()
                         }
                         // REM: focusSection makes the whole row catch focus. The toggle sits at the far right,
@@ -358,6 +361,7 @@ struct SettingsView: View {
                                         .cornerRadius(8)
                                     }
                                     .buttonStyle(SettingsFocusButtonStyle())
+                                    .accessibilityAddTraits(playerManager.isShuffleEnabled ? .isSelected : [])
 
                                     Button {
                                         playerManager.cycleRepeatMode()
@@ -400,6 +404,7 @@ struct SettingsView: View {
                                                 .cornerRadius(8)
                                         }
                                         .buttonStyle(SettingsFocusButtonStyle())
+                                        .accessibilityAddTraits(settings.sleepTimerMinutes == option.rawValue ? .isSelected : [])
                                     }
                                 }
                             }
@@ -409,7 +414,7 @@ struct SettingsView: View {
                                     .font(.system(size: 36))
                                     .foregroundColor(tint)
                                 Spacer()
-                                Toggle("", isOn: followerBinding(for: \.playInBackground, key: "playInBackground"))
+                                Toggle("Play in Background", isOn: followerBinding(for: \.playInBackground, key: "playInBackground"))
                                     .labelsHidden()
                             }
                             // REM: same focus fix — Down from the left-side Timer buttons reaches this right-side toggle.
@@ -433,6 +438,7 @@ struct SettingsView: View {
                                 .padding(.vertical, 8)
                             }
                             .buttonStyle(SettingsFocusButtonStyle())
+                            .accessibilityAddTraits(musicStation == .none ? .isSelected : [])
 
                             // Station picker — app controls presentation
                             CryoStationPicker(
@@ -468,6 +474,7 @@ struct SettingsView: View {
                                     .padding(.vertical, 8)
                                 }
                                 .buttonStyle(SettingsFocusButtonStyle())
+                                .accessibilityAddTraits(colorScheme == opt ? .isSelected : [])
                             }
                         }
 
@@ -590,6 +597,8 @@ struct IntervalButton: View {
                 .cornerRadius(8)
         }
         .buttonStyle(SettingsFocusButtonStyle())
+        .accessibilityLabel("\(Int(interval)) seconds")
+        .accessibilityAddTraits(currentInterval == interval ? .isSelected : [])
     }
 }
 

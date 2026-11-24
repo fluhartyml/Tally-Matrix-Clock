@@ -360,4 +360,13 @@ struct NightModeStepperTests {
         // A click jumps one hour (his 11-24): 11 PM + click → Midnight.
         #expect(NightMode.stepped(23 * 60, by: 60 / NightMode.timeStep) == 0)
     }
+
+    @Test("Times follow the 24-Hour Clock switch (his 11-24)")
+    func twentyFour() {
+        #expect(NightMode.timeLabel(20 * 60 + 45, use24Hour: true) == "20:45")
+        #expect(NightMode.timeLabel(0, use24Hour: true) == "00:00")
+        #expect(NightMode.timeLabel(20 * 60 + 45) == "8:45 PM")
+        #expect(TallyTime(hour24: 8, minute: 45, use24Hour: false).spokenTime == "8:45 AM")
+        #expect(TallyTime(hour24: 20, minute: 45, use24Hour: true).spokenTime == "20:45")
+    }
 }

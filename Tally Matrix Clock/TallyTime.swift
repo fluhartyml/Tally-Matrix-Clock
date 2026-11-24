@@ -34,6 +34,13 @@ struct TallyTime: Equatable {
 
     var isPM: Bool { hour24 >= 12 }
 
+    /// REM: what VoiceOver reads for the tally face (his 11-24 accessibility ask). The squares mean
+    /// nothing read aloud, so the face is one element whose value is the time, in the clock's own
+    /// mode: "8:45 AM" in 12-hour, "20:45" in 24-hour.
+    var spokenTime: String {
+        NightMode.timeLabel(hour24 * 60 + minute, use24Hour: use24Hour)
+    }
+
     var hoursTens: Int { displayHour / 10 }
     var hoursOnes: Int { displayHour % 10 }
     var minutesTens: Int { minute / 10 }

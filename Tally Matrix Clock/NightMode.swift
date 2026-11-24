@@ -80,8 +80,11 @@ enum NightMode {
         return ((minutes + steps * timeStep) % day + day) % day
     }
 
-    static func timeLabel(_ minutes: Int) -> String {
+    // REM: 2026 NOV 24 — follows the 24-Hour Clock switch (his "what about 24 hour time?").
+    // 24-hour reads like the clock face: 20:45, 00:00. 12-hour keeps Midnight / Noon / 8:45 PM.
+    static func timeLabel(_ minutes: Int, use24Hour: Bool = false) -> String {
         let h = minutes / 60, m = minutes % 60
+        if use24Hour { return String(format: "%02d:%02d", h, m) }
         if minutes == 0 { return "Midnight" }
         if minutes == 12 * 60 { return "Noon" }
         let hour12 = h % 12 == 0 ? 12 : h % 12
