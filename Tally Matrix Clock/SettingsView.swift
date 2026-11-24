@@ -88,6 +88,9 @@ struct SettingsView: View {
                             Toggle("", isOn: followerBinding(for: \.showBase10, key: "showBase10"))
                                 .labelsHidden()
                         }
+                        // REM: focusSection makes the whole row catch focus. The toggle sits at the far right,
+                        // so without it Up from a left-side button ("Small") found nothing above and got stuck. (His report 11-23.)
+                        .focusSection()
 
                         HStack {
                             Text("24-Hour Clock")
@@ -97,6 +100,9 @@ struct SettingsView: View {
                             Toggle("", isOn: followerBinding(for: \.use24Hour, key: "use24Hour"))
                                 .labelsHidden()
                         }
+                        // REM: focusSection makes the whole row catch focus. The toggle sits at the far right,
+                        // so without it Up from a left-side button ("Small") found nothing above and got stuck. (His report 11-23.)
+                        .focusSection()
 
                         HStack {
                             Text("Show Date")
@@ -106,6 +112,9 @@ struct SettingsView: View {
                             Toggle("", isOn: followerBinding(for: \.showDate, key: "showDate"))
                                 .labelsHidden()
                         }
+                        // REM: focusSection makes the whole row catch focus. The toggle sits at the far right,
+                        // so without it Up from a left-side button ("Small") found nothing above and got stuck. (His report 11-23.)
+                        .focusSection()
 
                         HStack {
                             Text("Show Weather")
@@ -115,6 +124,9 @@ struct SettingsView: View {
                             Toggle("", isOn: followerBinding(for: \.showWeather, key: "showWeather"))
                                 .labelsHidden()
                         }
+                        // REM: focusSection makes the whole row catch focus. The toggle sits at the far right,
+                        // so without it Up from a left-side button ("Small") found nothing above and got stuck. (His report 11-23.)
+                        .focusSection()
 
                         if settings.showWeather {
                             WeatherAttributionLabel(tint: tint)
@@ -129,6 +141,9 @@ struct SettingsView: View {
                             Toggle("", isOn: followerBinding(for: \.showGlyphRain, key: "showGlyphRain"))
                                 .labelsHidden()
                         }
+                        // REM: focusSection makes the whole row catch focus. The toggle sits at the far right,
+                        // so without it Up from a left-side button ("Small") found nothing above and got stuck. (His report 11-23.)
+                        .focusSection()
 
                         if settings.showGlyphRain {
                             VStack(alignment: .leading, spacing: 20) {
@@ -168,6 +183,9 @@ struct SettingsView: View {
                             Toggle("", isOn: followerBinding(for: \.backgroundMusic, key: "backgroundMusic"))
                                 .labelsHidden()
                         }
+                        // REM: focusSection makes the whole row catch focus. The toggle sits at the far right,
+                        // so without it Up from a left-side button ("Small") found nothing above and got stuck. (His report 11-23.)
+                        .focusSection()
 
                         if settings.backgroundMusic {
                             // Shuffle / Repeat
@@ -246,6 +264,8 @@ struct SettingsView: View {
                                 Toggle("", isOn: followerBinding(for: \.playInBackground, key: "playInBackground"))
                                     .labelsHidden()
                             }
+                            // REM: same focus fix — Down from the left-side Timer buttons reaches this right-side toggle.
+                            .focusSection()
 
                             // Off option
                             Button {
