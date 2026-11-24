@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import CloudKit
 import Testing
 @testable import Tally_Matrix_Clock
 
@@ -176,5 +177,53 @@ struct RemoteCommands {
     @Test("Tests never talk to CloudKit")
     func cloudKitIsOffUnderTests() {
         #expect(CloudSettings.isRunningTests)
+    }
+}
+
+// MARK: - Two Apple TVs change settings at the same moment (roadmap 026 / line 009)
+
+// REM: Living Room changes the color while Office changes the rain size. Office's save lands
+// first, so Living Room's save is rejected with Office's record. Both changes must survive.
+// .serialized because both tests use the one shared CloudSettings.
+@Suite(.serialized)
+struct SimultaneousChanges {
+
+    private func officeRecord(glyphSize: String, color: String) -> CKRecord {
+        let id = CKRecord.ID(recordName: "HouseholdSettings", zoneID: CloudSettings.settingsZoneID)
+        let record = CKRecord(recordType: "Settings", recordID: id)
+        record["glyphRainSizeRaw"] = glyphSize as CKRecordValue
+        record["colorSchemeRaw"] = color as CKRecordValue
+        return record
+    }
+
+    @Test("Both changes land: Office's rain size and Living Room's color")
+    func bothChangesLand() {
+        let s = CloudSettings.shared
+        s.glyphRainSizeRaw = GlyphRainSize.small.rawValue
+        s.colorSchemeRaw = ColorSchemeOption.crimson.rawValue      // Living Room's change
+
+        let office = officeRecord(glyphSize: GlyphRainSize.large.rawValue,
+                                  color: ColorSchemeOption.randomRGB.rawValue)
+        let retry = s.resolveConflict(server: office, ourKeys: ["colorSchemeRaw"])
+
+        // On this TV: Office's size arrived, our color stayed.
+        #expect(s.glyphRainSizeRaw == GlyphRainSize.large.rawValue)
+        #expect(s.colorSchemeRaw == ColorSchemeOption.crimson.rawValue)
+        // The retry sends both, so every TV ends up with both.
+        #expect(retry["glyphRainSizeRaw"] as? String == GlyphRainSize.large.rawValue)
+        #expect(retry["colorSchemeRaw"] as? String == ColorSchemeOption.crimson.rawValue)
+    }
+
+    @Test("The retry rewrites only the key we changed")
+    func retryTouchesOnlyOurKey() {
+        let s = CloudSettings.shared
+        s.colorSchemeRaw = ColorSchemeOption.crimson.rawValue
+        let office = officeRecord(glyphSize: GlyphRainSize.medium.rawValue,
+                                  color: ColorSchemeOption.randomRGB.rawValue)
+        let retry = s.resolveConflict(server: office, ourKeys: ["colorSchemeRaw"])
+        // Settings neither TV touched are not rewritten from this TV's copy.
+        #expect(retry["use24Hour"] == nil)
+        #expect(retry["showWeather"] == nil)
+        #expect(retry["glyphRainSizeRaw"] as? String == GlyphRainSize.medium.rawValue)
     }
 }

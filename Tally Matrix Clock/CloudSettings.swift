@@ -458,8 +458,7 @@ class CloudSettings: ObservableObject {
         let keys = pending
         pending.removeAll()
 
-        let record = cachedRecord ?? CKRecord(recordType: "Settings", recordID: settingsRecordID)
-        for key in keys { record[key] = value(for: key) }
+        let record = stamp(keys, onto: cachedRecord ?? CKRecord(recordType: "Settings", recordID: settingsRecordID))
 
         let op = CKModifyRecordsOperation(recordsToSave: [record], recordIDsToDelete: nil)
         // Only the keys set above are sent; the server rejects us if someone else wrote first.
@@ -479,6 +478,22 @@ class CloudSettings: ObservableObject {
         database.add(op)
     }
 
+    /// Writes only the given keys onto the record (line 009: save only what changed).
+    private func stamp(_ keys: Set<String>, onto record: CKRecord) -> CKRecord {
+        for key in keys { record[key] = value(for: key) }
+        return record
+    }
+
+    /// REM 009/026: another Apple TV saved first. Take every field it wrote, keep only OUR changed
+    /// keys on top, and return the record the retry will send. Internal (not private) so the
+    /// two-changes-at-once test can drive it without CloudKit — two remotes in two rooms is not a test.
+    func resolveConflict(server: CKRecord, ourKeys: Set<String>) -> CKRecord {
+        cachedRecord = server
+        pending.formUnion(ourKeys)
+        applyCloudRecord(server, skipping: pending)
+        return stamp(pending, onto: server)
+    }
+
     private func saveFailed(_ error: Error, keys: Set<String>, attempt: Int) {
         let ck = error as? CKError
         if ck?.code == .serverRecordChanged, let server = ck?.serverRecord {
@@ -489,8 +504,7 @@ class CloudSettings: ObservableObject {
                 applyCloudRecord(server, skipping: pending)
             } else {
                 // Two changes at once: keep the other room's fields, re-apply ours, try again.
-                pending.formUnion(keys)
-                applyCloudRecord(server, skipping: pending)
+                _ = resolveConflict(server: server, ourKeys: keys)
                 if attempt < 3 { savePending(attempt: attempt + 1) }
             }
         } else if ck?.code == .zoneNotFound || ck?.code == .userDeletedZone {
