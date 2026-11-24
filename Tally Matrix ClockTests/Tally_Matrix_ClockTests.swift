@@ -328,3 +328,23 @@ struct NightModeRules {
         s.nightBrightness = before
     }
 }
+
+// MARK: - Remote left/right themes (roadmap 024)
+
+struct RemoteThemeStepping {
+    @Test("Right steps forward, left steps back, both wrap around")
+    func wraps() {
+        let all = ColorSchemeOption.allCases
+        #expect(ContentView.theme(after: all[0], by: 1) == all[1])
+        #expect(ContentView.theme(after: all[0], by: -1) == all.last)
+        #expect(ContentView.theme(after: all.last!, by: 1) == all[0])
+    }
+
+    @Test("Stepping all the way round visits every theme once")
+    func visitsAll() {
+        var t = ColorSchemeOption.allCases[0]
+        var seen: [ColorSchemeOption] = []
+        for _ in ColorSchemeOption.allCases { seen.append(t); t = ContentView.theme(after: t, by: 1) }
+        #expect(Set(seen.map(\.rawValue)).count == ColorSchemeOption.allCases.count)
+    }
+}

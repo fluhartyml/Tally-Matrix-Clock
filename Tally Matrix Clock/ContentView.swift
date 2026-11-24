@@ -467,8 +467,16 @@ struct ContentView: View {
                 showSettings = true
             }
         }
-        .onMoveCommand { _ in
-            showSettings = true
+        // REM (roadmap 024, locked 11-23): left/right steps through the color themes; up/down opens
+        // Settings (before this, every direction opened Settings). Click = skip and Play/Pause = pause
+        // are unchanged; the glyph switch stays in Settings. While Night Mode is showing, left/right
+        // changes the NIGHT theme — the one on screen — and never the day theme (021).
+        .onMoveCommand { direction in
+            switch direction {
+            case .left: stepTheme(by: -1)
+            case .right: stepTheme(by: 1)
+            default: showSettings = true
+            }
         }
         .onPlayPauseCommand {
             if isFollower {
@@ -637,6 +645,26 @@ struct ContentView: View {
                 }
             }
         }
+    }
+
+    /// The next or previous theme, wrapping at either end. Pure, so it can be tested.
+    static func theme(after current: ColorSchemeOption, by step: Int) -> ColorSchemeOption {
+        let all = ColorSchemeOption.allCases
+        let i = all.firstIndex(of: current) ?? 0
+        return all[((i + step) % all.count + all.count) % all.count]
+    }
+
+    func stepTheme(by step: Int) {
+        let next = Self.theme(after: colorScheme, by: step).rawValue
+        let key = isNight ? "nightColorSchemeRaw" : "colorSchemeRaw"
+        if isFollower {
+            settings.requestSettingChange(key: key, value: next)   // the leader applies it (022)
+        } else if isNight {
+            settings.nightColorSchemeRaw = next
+        } else {
+            settings.colorSchemeRaw = next
+        }
+        withAnimation(.easeInOut(duration: 0.5)) { updatePatterns() }
     }
 
     func startSleepTimer(minutes: Int) {
