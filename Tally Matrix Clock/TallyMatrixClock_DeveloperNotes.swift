@@ -16,6 +16,8 @@
 //  Version:        3.0 (minimum tvOS 27)
 //  Build:          = git rev-list --count HEAD, stamped by Scripts/stamp-build.sh via the
 //                  post-commit hook (Scripts/install-hooks.sh). Never hand-stamp.
+//                  2026 NOV 24: post-commit also pushes the commit to GitHub after stamping.
+//                  GROK_NO_PUSH=1 skips the push. The stamp itself stays in the working tree.
 //  Language:       Swift, SwiftUI
 //  GitHub:         fluhartyml/Tally-Matrix-Clock
 //  Location:       ~/Developer.complex/Tally-Matrix-Clock/
