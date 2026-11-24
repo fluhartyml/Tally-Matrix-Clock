@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- REM (roadmap 011, locked with Michael 2026 NOV 23): lets the clock receive
+	     silent CloudKit pushes, so Apple TVs stop polling the settings every second.
+	     Kept outside the synchronized "Tally Matrix Clock" folder on purpose, so Xcode
+	     doesn't also copy it as a resource. Merged with the generated Info.plist. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+</dict>
+</plist>
