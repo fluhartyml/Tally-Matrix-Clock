@@ -88,3 +88,24 @@ final class TimeSpeaker: NSObject, AVSpeechSynthesizerDelegate {
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 }
+
+// REM 2026 NOV 24 — his ask: "can it be announce on the quater half or hour and or the center button
+// long press?" → his "yes please" to two separate settings: Say Time Automatically (Off / Every Hour /
+// Every Half Hour / Every Quarter Hour) and the long-press switch. Either, both or neither. Per TV.
+enum SayTimeEvery: Int, CaseIterable {
+    case off = 0, hour = 60, halfHour = 30, quarterHour = 15
+
+    var label: String {
+        switch self {
+        case .off: "Off"
+        case .hour: "Every Hour"
+        case .halfHour: "Every Half Hour"
+        case .quarterHour: "Every Quarter Hour"
+        }
+    }
+
+    /// True when this minute of the day is one to announce.
+    func announces(minute: Int) -> Bool {
+        self != .off && minute % rawValue == 0
+    }
+}

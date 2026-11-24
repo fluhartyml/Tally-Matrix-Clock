@@ -21,6 +21,9 @@ struct ContentView: View {
     // REM 11-24: per-TV switch (stays on this Apple TV, not synced) — "say time with center button long press".
     @AppStorage("sayTimeOnLongPress") private var sayTimeOnLongPress = false
     @State private var lastLongPress = Date.distantPast
+    // REM 11-24: "Say Time Automatically" (his "quarter, half or hour"), per TV like the long-press switch.
+    @AppStorage("sayTimeEvery") private var sayTimeEveryRaw = SayTimeEvery.off.rawValue
+    @State private var lastAnnouncedMinute = -1   // minute of the day last spoken, so a minute speaks once
     @State private var textTargets: [TextTarget] = []
     @State private var musicAuthorized = false
     @State private var nowPlayingTitle: String = ""
@@ -413,6 +416,17 @@ struct ContentView: View {
         .onReceive(timer) { _ in
             currentTime = Date()
             evaluateNight()
+
+            let t = tallyTime
+            let minuteOfDay = t.hour24 * 60 + t.minute
+            if minuteOfDay != lastAnnouncedMinute {
+                // REM: the first tick after launch only records the minute, so opening the app at 9:45 is silent.
+                let isFirstTick = lastAnnouncedMinute == -1
+                lastAnnouncedMinute = minuteOfDay
+                if !isFirstTick, (SayTimeEvery(rawValue: sayTimeEveryRaw) ?? .off).announces(minute: t.minute) {
+                    TimeSpeaker.shared.say(t)
+                }
+            }
 
             if Date().timeIntervalSince(lastBurnInShift) >= Self.burnInEvery {
                 lastBurnInShift = Date()

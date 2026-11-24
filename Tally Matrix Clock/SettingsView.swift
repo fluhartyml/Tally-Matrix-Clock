@@ -13,6 +13,7 @@ struct SettingsView: View {
     @ObservedObject var settings: CloudSettings
     @Bindable var playerManager: MusicPlaybackManager
     @AppStorage("sayTimeOnLongPress") private var sayTimeOnLongPress = false
+    @AppStorage("sayTimeEvery") private var sayTimeEveryRaw = SayTimeEvery.off.rawValue
 
     private var colorScheme: ColorSchemeOption {
         ColorSchemeOption(rawValue: settings.colorSchemeRaw) ?? .randomRGB
@@ -267,6 +268,18 @@ struct SettingsView: View {
                             Toggle("Say Time", isOn: $sayTimeOnLongPress)
                                 .labelsHidden()
                                 .accessibilityLabel("Say Time")
+                        }
+                        .focusSection()
+
+                        // REM 11-24 — his "announce on the quarter, half or hour". Per TV, not synced.
+                        VStack(alignment: .leading, spacing: 15) {
+                            Text("Say Time Automatically")
+                                .font(.system(size: 36))
+                                .foregroundColor(tint)
+                            choiceRow(SayTimeEvery.allCases, selected: SayTimeEvery(rawValue: sayTimeEveryRaw) ?? .off,
+                                      label: { $0.label }) {
+                                sayTimeEveryRaw = $0.rawValue
+                            }
                         }
                         .focusSection()
 

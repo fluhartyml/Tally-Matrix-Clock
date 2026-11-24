@@ -369,4 +369,15 @@ struct NightModeStepperTests {
         #expect(TallyTime(hour24: 8, minute: 45, use24Hour: false).spokenTime == "8:45 AM")
         #expect(TallyTime(hour24: 20, minute: 45, use24Hour: true).spokenTime == "20:45")
     }
+
+    @Test("Say Time Automatically picks the right minutes (his 11-24)")
+    func sayTimeEvery() {
+        #expect(!SayTimeEvery.off.announces(minute: 0))
+        #expect(SayTimeEvery.hour.announces(minute: 0))
+        #expect(!SayTimeEvery.hour.announces(minute: 30))
+        #expect(SayTimeEvery.halfHour.announces(minute: 30))
+        #expect(!SayTimeEvery.halfHour.announces(minute: 15))
+        #expect(SayTimeEvery.quarterHour.announces(minute: 45))
+        #expect(!SayTimeEvery.quarterHour.announces(minute: 41))
+    }
 }
