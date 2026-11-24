@@ -105,10 +105,13 @@ struct SettingsView: View {
             .cornerRadius(8)
         }
         .buttonStyle(SettingsFocusButtonStyle())
+        // REM 2026 NOV 24 — his word: "when i press right it was supposed to jump by hour and
+        // predd left it was supposed to reverse in 15 minute intervals". Right = +1 hour,
+        // Left = back 15 minutes (fine-tune). Click still jumps an hour.
         .onMoveCommand { direction in
             switch direction {
             case .left: action(NightMode.stepped(minutes, by: -1))
-            case .right: action(NightMode.stepped(minutes, by: 1))
+            case .right: action(NightMode.stepped(minutes, by: 60 / NightMode.timeStep))
             default: break
             }
         }
@@ -116,7 +119,7 @@ struct SettingsView: View {
         .accessibilityValue(NightMode.timeLabel(minutes, use24Hour: settings.use24Hour))
         .accessibilityAdjustableAction { direction in
             switch direction {
-            case .increment: action(NightMode.stepped(minutes, by: 1))
+            case .increment: action(NightMode.stepped(minutes, by: 60 / NightMode.timeStep))
             case .decrement: action(NightMode.stepped(minutes, by: -1))
             @unknown default: break
             }
