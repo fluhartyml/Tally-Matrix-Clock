@@ -227,3 +227,104 @@ struct SimultaneousChanges {
         #expect(retry["glyphRainSizeRaw"] as? String == GlyphRainSize.medium.rawValue)
     }
 }
+
+// MARK: - Night Mode (roadmap 017–022, test 028)
+// REM: pure decisions only — no clock, location or WeatherKit. A fixed UTC calendar keeps
+// the minutes exact whatever time zone the test Mac is in.
+
+struct NightModeRules {
+    var utc: Calendar { var c = Calendar(identifier: .gregorian); c.timeZone = TimeZone(identifier: "UTC")!; return c }
+
+    func at(_ hour: Int, _ minute: Int = 0, day: Int = 24) -> Date {
+        utc.date(from: DateComponents(year: 2026, month: 11, day: day, hour: hour, minute: minute))!
+    }
+
+    func evaluate(_ now: Date, enabled: Bool = true, trigger: NightTrigger = .schedule,
+                  start: Int = NightMode.defaultStart, end: Int = NightMode.defaultEnd, sun: SunTimes? = nil) -> (isNight: Bool, source: NightMode.Source) {
+        NightMode.evaluate(enabled: enabled, trigger: trigger, now: now, startMinutes: start, endMinutes: end, sun: sun, calendar: utc)
+    }
+
+    @Test("Off by default means never night — Night Mode is never forced")
+    func offIsNeverNight() {
+        #expect(evaluate(at(23), enabled: false) == (false, .off))
+    }
+
+    @Test("Bedtime 10 PM–7 AM wraps past midnight and returns to the day look at 7")
+    func scheduleWraps() {
+        #expect(evaluate(at(21, 59)).isNight == false)
+        #expect(evaluate(at(22, 0)).isNight == true)
+        #expect(evaluate(at(0, 0)).isNight == true)
+        #expect(evaluate(at(6, 59)).isNight == true)
+        #expect(evaluate(at(7, 0)).isNight == false)
+        #expect(evaluate(at(12, 0)).isNight == false)
+    }
+
+    @Test("A window that does not cross midnight works too")
+    func sameDayWindow() {
+        #expect(NightMode.window(start: 60, end: 300, contains: 120))
+        #expect(!NightMode.window(start: 60, end: 300, contains: 300))
+    }
+
+    @Test("Sunset to sunrise uses today's sun times")
+    func followsTodaysSun() {
+        let sun = SunTimes(sunriseMinutes: 7 * 60 + 5, sunsetMinutes: 17 * 60 + 30, day: utc.startOfDay(for: at(12)))
+        #expect(evaluate(at(17, 29), trigger: .sun, sun: sun).isNight == false)
+        #expect(evaluate(at(17, 30), trigger: .sun, sun: sun) == (true, .todaysSun))
+        #expect(evaluate(at(7, 5), trigger: .sun, sun: sun).isNight == false)
+    }
+
+    @Test("020: weather unreachable today → last saved sun times stand in")
+    func fallsBackToSavedSun() {
+        let yesterday = SunTimes(sunriseMinutes: 7 * 60, sunsetMinutes: 17 * 60 + 30, day: utc.startOfDay(for: at(12, day: 23)))
+        #expect(evaluate(at(18), trigger: .sun, sun: yesterday) == (true, .savedSun))
+    }
+
+    @Test("020: no sun times ever → the bedtime schedule")
+    func fallsBackToSchedule() {
+        #expect(evaluate(at(18), trigger: .sun, sun: nil) == (false, .scheduleFallback))
+        #expect(evaluate(at(23), trigger: .sun, sun: nil) == (true, .scheduleFallback))
+    }
+
+    @Test("020: unusable sun times (polar) skip to the schedule; an empty schedule is the day look")
+    func lastFallbacks() {
+        let polar = SunTimes(sunriseMinutes: 0, sunsetMinutes: 0, day: utc.startOfDay(for: at(12)))
+        #expect(evaluate(at(23), trigger: .sun, sun: polar) == (true, .scheduleFallback))
+        #expect(evaluate(at(23), start: 0, end: 0).isNight == false)
+    }
+
+    @Test("Sun times save and load on this Apple TV")
+    func sunRoundTrip() {
+        let defaults = UserDefaults(suiteName: "tally.tests.night")!
+        defaults.removePersistentDomain(forName: "tally.tests.night")
+        let sun = SunTimes(sunriseMinutes: 425, sunsetMinutes: 1050, day: utc.startOfDay(for: at(12)))
+        sun.save(to: defaults)
+        #expect(SunTimes.load(from: defaults) == sun)
+    }
+
+    @Test("Hour labels read like a clock")
+    func labels() {
+        #expect(NightMode.timeLabel(0) == "Midnight")
+        #expect(NightMode.timeLabel(22 * 60) == "10 PM")
+        #expect(NightMode.timeLabel(7 * 60) == "7 AM")
+    }
+
+    @Test("021 + 017: Night Mode defaults — Crimson night theme, off, day theme untouched")
+    func defaults() {
+        let s = CloudSettings.shared
+        #expect(ColorSchemeOption(rawValue: s.nightColorSchemeRaw) != nil)
+        #expect(NightMode.brightnessChoices == [25, 50, 75, 100])
+        #expect(CloudSettings.settingKeys.contains("nightColorSchemeRaw"))
+        #expect(CloudSettings.settingKeys.contains("colorSchemeRaw"))
+    }
+
+    @Test("022: a follower's Night Mode request is applied by the leader")
+    func followerRequest() {
+        let s = CloudSettings.shared
+        let before = s.nightBrightness
+        let target = before == 25 ? 75 : 25
+        s.requestSettingChange(key: "nightBrightness", value: target)
+        s.applyRequestedSettings()
+        #expect(s.nightBrightness == target)
+        s.nightBrightness = before
+    }
+}

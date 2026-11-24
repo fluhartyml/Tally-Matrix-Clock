@@ -52,6 +52,115 @@ struct SettingsView: View {
         )
     }
 
+    /// Writes a setting directly, or asks the leader for it when this TV follows (022).
+    private func set<T>(_ keyPath: ReferenceWritableKeyPath<CloudSettings, T>, key: String, _ value: T) {
+        if isFollower {
+            settings.requestSettingChange(key: key, value: value)
+        } else {
+            settings[keyPath: keyPath] = value
+        }
+    }
+
+    private var nightTrigger: NightTrigger {
+        NightTrigger(rawValue: settings.nightTriggerRaw) ?? .schedule
+    }
+
+    /// One row of equal buttons; the chosen one is filled.
+    private func choiceRow<V: Hashable>(_ values: [V], selected: V, label: @escaping (V) -> String,
+                                        action: @escaping (V) -> Void) -> some View {
+        HStack(spacing: 20) {
+            ForEach(values, id: \.self) { v in
+                Button { action(v) } label: {
+                    Text(label(v))
+                        .font(.system(size: 32))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 20)
+                        .background(selected == v ? accentTint : Color.gray.opacity(0.3))
+                        .cornerRadius(8)
+                }
+                .buttonStyle(SettingsFocusButtonStyle())
+            }
+        }
+    }
+
+    /// Tells the user which rule is in charge, including a fallback (020).
+    private var sunCaption: String {
+        guard let sun = SunTimes.load(), sun.isUsable else {
+            return "Sun times not available yet. Using the bedtime schedule until they arrive."
+        }
+        let times = "Sunset \(NightMode.timeLabel(sun.sunsetMinutes)) · Sunrise \(NightMode.timeLabel(sun.sunriseMinutes))"
+        return sun.isFrom(Date()) ? times : "\(times) (last saved)"
+    }
+
+    @ViewBuilder private var nightModeSection: some View {
+        HStack {
+            Text("Night Mode")
+                .font(.system(size: 36))
+                .foregroundColor(tint)
+            Spacer()
+            Toggle("", isOn: followerBinding(for: \.nightModeEnabled, key: "nightModeEnabled"))
+                .labelsHidden()
+        }
+        // REM: same focus fix as the other switch rows (his report 11-23).
+        .focusSection()
+
+        if settings.nightModeEnabled {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("Turns On")
+                    .font(.system(size: 36))
+                    .foregroundColor(tint)
+                choiceRow(NightTrigger.allCases, selected: nightTrigger, label: { $0.rawValue }) {
+                    set(\.nightTriggerRaw, key: "nightTriggerRaw", $0.rawValue)
+                }
+
+                if nightTrigger == .schedule {
+                    Text("Starts")
+                        .font(.system(size: 36))
+                        .foregroundColor(tint)
+                    choiceRow(NightMode.startChoices, selected: settings.nightStartMinutes, label: NightMode.timeLabel) {
+                        set(\.nightStartMinutes, key: "nightStartMinutes", $0)
+                    }
+                    Text("Ends")
+                        .font(.system(size: 36))
+                        .foregroundColor(tint)
+                    choiceRow(NightMode.endChoices, selected: settings.nightEndMinutes, label: NightMode.timeLabel) {
+                        set(\.nightEndMinutes, key: "nightEndMinutes", $0)
+                    }
+                } else {
+                    Text(sunCaption)
+                        .font(.system(size: 29))
+                        .foregroundColor(tint.opacity(0.6))
+                }
+
+                Text("Night Color")
+                    .font(.system(size: 36))
+                    .foregroundColor(tint)
+                ForEach(ColorSchemeOption.allCases, id: \.self) { opt in
+                    Button {
+                        set(\.nightColorSchemeRaw, key: "nightColorSchemeRaw", opt.rawValue)
+                    } label: {
+                        HStack {
+                            Image(systemName: settings.nightColorSchemeRaw == opt.rawValue ? "checkmark.circle.fill" : "circle")
+                                .font(.system(size: 29))
+                            Text(opt.rawValue)
+                                .font(.system(size: 30))
+                            Spacer()
+                        }
+                        .padding(.vertical, 8)
+                    }
+                    .buttonStyle(SettingsFocusButtonStyle())
+                }
+
+                Text("Night Brightness")
+                    .font(.system(size: 36))
+                    .foregroundColor(tint)
+                choiceRow(NightMode.brightnessChoices, selected: settings.nightBrightness, label: { "\($0)%" }) {
+                    set(\.nightBrightness, key: "nightBrightness", $0)
+                }
+            }
+        }
+    }
+
     private var isCrimson: Bool {
         colorScheme == .crimson
     }
@@ -322,6 +431,11 @@ struct SettingsView: View {
                                 .buttonStyle(SettingsFocusButtonStyle())
                             }
                         }
+
+                        Divider().background(subtleTint)
+
+                        // REM 022: Night Mode sits right after Color Scheme.
+                        nightModeSection
 
                         Divider().background(subtleTint)
 

@@ -85,6 +85,15 @@ class CloudSettings: ObservableObject {
     @Published var colorSchemeRaw: String { didSet { syncToCloud("colorSchemeRaw") } }
     @Published var patternInterval: Double { didSet { syncToCloud("patternInterval") } }
 
+    // Night Mode (roadmap 017–022; rules in NightMode.swift). REM 021: the night theme is its own
+    // setting — colorSchemeRaw stays the DAY theme and Night Mode never writes it.
+    @Published var nightModeEnabled: Bool { didSet { syncToCloud("nightModeEnabled") } }
+    @Published var nightTriggerRaw: String { didSet { syncToCloud("nightTriggerRaw") } }
+    @Published var nightStartMinutes: Int { didSet { syncToCloud("nightStartMinutes") } }
+    @Published var nightEndMinutes: Int { didSet { syncToCloud("nightEndMinutes") } }
+    @Published var nightColorSchemeRaw: String { didSet { syncToCloud("nightColorSchemeRaw") } }
+    @Published var nightBrightness: Int { didSet { syncToCloud("nightBrightness") } }
+
     // Leader/Follower
     @Published var leaderDeviceName: String { didSet { syncToCloud("leaderDeviceName") } }
     @Published var isLeader: Bool = false
@@ -102,7 +111,9 @@ class CloudSettings: ObservableObject {
 
     static let settingKeys = ["showBase10", "use24Hour", "showDate", "showWeather", "showGlyphRain",
                               "glyphRainSizeRaw", "backgroundMusic", "playInBackground", "musicStationRaw",
-                              "sleepTimerMinutes", "colorSchemeRaw", "patternInterval", "leaderDeviceName"]
+                              "sleepTimerMinutes", "colorSchemeRaw", "patternInterval", "leaderDeviceName",
+                              "nightModeEnabled", "nightTriggerRaw", "nightStartMinutes", "nightEndMinutes",
+                              "nightColorSchemeRaw", "nightBrightness"]
     static let commandKeys = ["pauseRequested", "skipRequested", "requestedStation", "requestedSettings"]
 
     // MARK: - Setting requests (pure, tested)
@@ -167,6 +178,18 @@ class CloudSettings: ObservableObject {
             if let v = value as? Int { sleepTimerMinutes = v }
         case "patternInterval":
             if let v = value as? Double { patternInterval = v }
+        case "nightModeEnabled":
+            if let v = value as? Bool { nightModeEnabled = v }
+        case "nightTriggerRaw":
+            if let v = value as? String { nightTriggerRaw = v }
+        case "nightStartMinutes":
+            if let v = value as? Int { nightStartMinutes = v }
+        case "nightEndMinutes":
+            if let v = value as? Int { nightEndMinutes = v }
+        case "nightColorSchemeRaw":
+            if let v = value as? String { nightColorSchemeRaw = v }
+        case "nightBrightness":
+            if let v = value as? Int { nightBrightness = v }
         default:
             break
         }
@@ -206,6 +229,12 @@ class CloudSettings: ObservableObject {
         sleepTimerMinutes = local.object(forKey: "sleepTimerMinutes") as? Int ?? 0
         colorSchemeRaw = local.string(forKey: "colorSchemeRaw") ?? ColorSchemeOption.randomRGB.rawValue
         patternInterval = local.object(forKey: "patternInterval") as? Double ?? 60.0
+        nightModeEnabled = local.object(forKey: "nightModeEnabled") as? Bool ?? false   // never forced (017)
+        nightTriggerRaw = local.string(forKey: "nightTriggerRaw") ?? NightTrigger.schedule.rawValue
+        nightStartMinutes = local.object(forKey: "nightStartMinutes") as? Int ?? NightMode.defaultStart
+        nightEndMinutes = local.object(forKey: "nightEndMinutes") as? Int ?? NightMode.defaultEnd
+        nightColorSchemeRaw = local.string(forKey: "nightColorSchemeRaw") ?? ColorSchemeOption.crimson.rawValue
+        nightBrightness = local.object(forKey: "nightBrightness") as? Int ?? NightMode.defaultBrightness
         leaderDeviceName = local.string(forKey: "leaderDeviceName") ?? ""
         pauseRequested = false  // Never persist — always starts fresh
         skipRequested = false
@@ -370,6 +399,12 @@ class CloudSettings: ObservableObject {
         if take("sleepTimerMinutes"), let v = record["sleepTimerMinutes"] as? Int { sleepTimerMinutes = v }
         if take("colorSchemeRaw"), let v = record["colorSchemeRaw"] as? String { colorSchemeRaw = v }
         if take("patternInterval"), let v = record["patternInterval"] as? Double { patternInterval = v }
+        if take("nightModeEnabled"), let v = record["nightModeEnabled"] as? Bool { nightModeEnabled = v }
+        if take("nightTriggerRaw"), let v = record["nightTriggerRaw"] as? String { nightTriggerRaw = v }
+        if take("nightStartMinutes"), let v = record["nightStartMinutes"] as? Int { nightStartMinutes = v }
+        if take("nightEndMinutes"), let v = record["nightEndMinutes"] as? Int { nightEndMinutes = v }
+        if take("nightColorSchemeRaw"), let v = record["nightColorSchemeRaw"] as? String { nightColorSchemeRaw = v }
+        if take("nightBrightness"), let v = record["nightBrightness"] as? Int { nightBrightness = v }
         if take("leaderDeviceName"), let v = record["leaderDeviceName"] as? String {
             leaderDeviceName = v
             isLeader = !v.isEmpty && v == deviceName
@@ -396,6 +431,12 @@ class CloudSettings: ObservableObject {
         local.set(sleepTimerMinutes, forKey: "sleepTimerMinutes")
         local.set(colorSchemeRaw, forKey: "colorSchemeRaw")
         local.set(patternInterval, forKey: "patternInterval")
+        local.set(nightModeEnabled, forKey: "nightModeEnabled")
+        local.set(nightTriggerRaw, forKey: "nightTriggerRaw")
+        local.set(nightStartMinutes, forKey: "nightStartMinutes")
+        local.set(nightEndMinutes, forKey: "nightEndMinutes")
+        local.set(nightColorSchemeRaw, forKey: "nightColorSchemeRaw")
+        local.set(nightBrightness, forKey: "nightBrightness")
         local.set(leaderDeviceName, forKey: "leaderDeviceName")
     }
 
@@ -444,6 +485,12 @@ class CloudSettings: ObservableObject {
         case "sleepTimerMinutes": return sleepTimerMinutes as CKRecordValue
         case "colorSchemeRaw": return colorSchemeRaw as CKRecordValue
         case "patternInterval": return patternInterval as CKRecordValue
+        case "nightModeEnabled": return nightModeEnabled as CKRecordValue
+        case "nightTriggerRaw": return nightTriggerRaw as CKRecordValue
+        case "nightStartMinutes": return nightStartMinutes as CKRecordValue
+        case "nightEndMinutes": return nightEndMinutes as CKRecordValue
+        case "nightColorSchemeRaw": return nightColorSchemeRaw as CKRecordValue
+        case "nightBrightness": return nightBrightness as CKRecordValue
         case "leaderDeviceName": return leaderDeviceName as CKRecordValue
         case "pauseRequested": return pauseRequested as CKRecordValue
         case "skipRequested": return skipRequested as CKRecordValue

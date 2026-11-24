@@ -74,10 +74,37 @@ struct ContentView: View {
     @State private var weatherSymbol: String = ""
     @State private var lastWeatherFetch = Date.distantPast
 
+    // Night Mode (NightMode.swift). REM 019: sun times are fetched at launch, then once a day.
+    @State private var isNight = false
+    @State private var sunFetchedThisLaunch = false
+    @State private var lastSunAttempt = Date.distantPast
+
     @StateObject private var locationManager = LocationManager()
 
+    /// The look on screen right now: the night theme while Night Mode is on, else the day theme.
+    /// REM 021: this only READS the two settings; Night Mode never writes the day theme.
     private var colorScheme: ColorSchemeOption {
-        ColorSchemeOption(rawValue: settings.colorSchemeRaw) ?? .randomRGB
+        if isNight, let night = ColorSchemeOption(rawValue: settings.nightColorSchemeRaw) { return night }
+        return ColorSchemeOption(rawValue: settings.colorSchemeRaw) ?? .randomRGB
+    }
+
+    /// REM 017: dims the clock face and glyph rain only — never the opening animation.
+    private var nightDim: Double {
+        isNight ? Double(min(max(settings.nightBrightness, 25), 100)) / 100.0 : 1.0
+    }
+
+    private var nightTrigger: NightTrigger {
+        NightTrigger(rawValue: settings.nightTriggerRaw) ?? .schedule
+    }
+
+    private func evaluateNight() {
+        let result = NightMode.evaluate(enabled: settings.nightModeEnabled, trigger: nightTrigger, now: currentTime,
+                                        startMinutes: settings.nightStartMinutes, endMinutes: settings.nightEndMinutes,
+                                        sun: SunTimes.load())
+        if result.isNight != isNight {
+            isNight = result.isNight
+            withAnimation(.easeInOut(duration: 2.0)) { updatePatterns() }   // recolor at once, not at the next shuffle
+        }
     }
 
     private var schemeColor: Color {
@@ -115,7 +142,7 @@ struct ContentView: View {
             if settings.showGlyphRain {
                 GlyphRainView(colorScheme: colorScheme, textTargets: textTargets, rainSize: GlyphRainSize(rawValue: settings.glyphRainSizeRaw) ?? .medium)
                     .ignoresSafeArea()
-                    .opacity(clockOpacity)
+                    .opacity(clockOpacity * nightDim)
             }
 
             VStack(spacing: 60) {
@@ -258,7 +285,7 @@ struct ContentView: View {
 
                 Spacer().frame(height: 60)
             }
-            .opacity(clockOpacity)
+            .opacity(clockOpacity * nightDim)
 
 
             // Leader/Follower badge — bottom right
@@ -286,7 +313,7 @@ struct ContentView: View {
                             .padding(.bottom, 30)
                     }
                 }
-                .opacity(clockOpacity)
+                .opacity(clockOpacity * nightDim)
             }
 
             // Easter egg overlay
@@ -319,6 +346,7 @@ struct ContentView: View {
         .onAppear {
             isFocused = true
             UIApplication.shared.isIdleTimerDisabled = true
+            evaluateNight()
             updatePatterns()
             lastPatternChange = Date()
             fetchWeather()
@@ -367,6 +395,7 @@ struct ContentView: View {
         }
         .onReceive(timer) { _ in
             currentTime = Date()
+            evaluateNight()
 
             // Check if any digit changed — if so, update patterns immediately
             // REM: the 12/24-hour setting rides along so switching it reshuffles at once —
@@ -497,6 +526,13 @@ struct ContentView: View {
                     startBackgroundMusic()
                 }
             }
+        }
+        // Night Mode settings changed (here or on another TV): re-decide now, and fetch sun times if needed.
+        .onChange(of: [settings.nightModeEnabled ? 1 : 0, settings.nightStartMinutes, settings.nightEndMinutes,
+                       settings.nightBrightness, settings.nightTriggerRaw.hashValue, settings.nightColorSchemeRaw.hashValue]) { _, _ in
+            evaluateNight()
+            if isNight { updatePatterns() }
+            fetchWeather()
         }
         .onChange(of: settings.sleepTimerMinutes) { _, minutes in
             startSleepTimer(minutes: minutes)
@@ -663,9 +699,15 @@ struct ContentView: View {
     // REM (roadmap 013, 2026 NOV 23): the ONE weather path — LocationManager + this
     // function, every 15 minutes. The unused CryoKit CryoWeatherManager (its own location
     // lookup and fetch) was removed; it is in git history. Night Mode's sunrise/sunset
-    // (roadmap 018–020) must come through here, not a second fetch.
+    // (roadmap 018–020) come through here too — never a second fetch path.
+    // REM (019): sun times are asked for only when Night Mode follows the sun: at launch and once a
+    // day, riding along with the weather call when weather is on. A failed sun fetch waits 15 minutes.
     func fetchWeather() {
-        guard settings.showWeather else { return }
+        let needsSun = settings.nightModeEnabled && nightTrigger == .sun
+        let sunDue = needsSun
+            && (!sunFetchedThisLaunch || !(SunTimes.load()?.isFrom(Date()) ?? false))
+            && Date().timeIntervalSince(lastSunAttempt) > 900
+        guard settings.showWeather || sunDue else { return }
         guard let location = locationManager.location else {
             locationManager.retryLocation()
             return
@@ -674,28 +716,48 @@ struct ContentView: View {
         let hasWeather = !weatherTemp.isEmpty
         // Only fetch every 15 minutes after first successful fetch
         // Never throttle if weather hasn't loaded yet — keep retrying
-        guard !hasWeather || Date().timeIntervalSince(lastWeatherFetch) > 900 else { return }
-        if hasWeather {
+        let weatherDue = settings.showWeather && (!hasWeather || Date().timeIntervalSince(lastWeatherFetch) > 900)
+        guard weatherDue || sunDue else { return }
+        if weatherDue && hasWeather {
             lastWeatherFetch = Date()
+        }
+        if sunDue {
+            lastSunAttempt = Date()
         }
 
         Task {
             do {
-                let weather = try await WeatherService.shared.weather(for: location)
-                let current = weather.currentWeather
-                let temp = current.temperature
-                let tempString = String(format: "%.0f°%@", temp.converted(to: .fahrenheit).value, "F")
-                let condition = current.condition.description
-                let symbol = current.symbolName
+                var current: CurrentWeather? = nil
+                var days: Forecast<DayWeather>? = nil
+                if weatherDue && sunDue {
+                    (current, days) = try await WeatherService.shared.weather(for: location, including: .current, .daily)
+                } else if weatherDue {
+                    current = try await WeatherService.shared.weather(for: location, including: .current)
+                } else {
+                    days = try await WeatherService.shared.weather(for: location, including: .daily)
+                }
 
                 await MainActor.run {
-                    weatherTemp = tempString
-                    weatherCondition = condition
-                    weatherSymbol = symbol
-                    lastWeatherFetch = Date()
+                    if let current {
+                        weatherTemp = String(format: "%.0f°%@", current.temperature.converted(to: .fahrenheit).value, "F")
+                        weatherCondition = current.condition.description
+                        weatherSymbol = current.symbolName
+                        lastWeatherFetch = Date()
+                    }
+                    if let days {
+                        let now = Date()
+                        if let today = days.first(where: { Calendar.current.isDate($0.date, inSameDayAs: now) }),
+                           let rise = today.sun.sunrise, let set = today.sun.sunset {
+                            SunTimes(sunriseMinutes: NightMode.minuteOfDay(rise), sunsetMinutes: NightMode.minuteOfDay(set),
+                                     day: Calendar.current.startOfDay(for: now)).save()
+                            sunFetchedThisLaunch = true
+                            evaluateNight()
+                        }
+                        // No sun times today (polar day/night): keep the saved ones — fallback 020.
+                    }
                 }
             } catch {
-                // Weather failed — don't set lastWeatherFetch so we retry next tick
+                // Failed — weather retries next tick; sun waits 15 minutes and the saved times stand in (020).
             }
         }
     }
