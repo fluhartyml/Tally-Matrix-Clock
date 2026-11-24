@@ -204,7 +204,7 @@
 //  - ShareAlike: Distribute contributions under the same license
 //
 //  Website: https://fluharty.me
-//  Contact: michael@fluharty.me
+//  Contact: michael@fluharty.com   (aligned 2026 NOV 23 with the support site — roadmap 015)
 //  Feedback and suggestions welcome!
 
 // ============================================================================
