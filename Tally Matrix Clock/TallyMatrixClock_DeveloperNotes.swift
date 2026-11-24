@@ -153,9 +153,12 @@
 //    TallyMatrixViews.swift       — The tally matrices
 //    GlyphRainView.swift          — Falling glyphs
 //    ClaudeStarburstView.swift    — Opening animation
-//    LocationManager.swift        — Location (one of two location paths; see roadmap 013)
-//    CryoSleepTimerPicker.swift, CryoStationPicker.swift, CryoTransportControls.swift
-//    Engine/                      — WeatherManager, MusicStationCatalog, MusicPlaybackManager
+//    TallyTime.swift              — Digit math (tested in Tally Matrix ClockTests)
+//    LocationManager.swift        — Location for the ONE weather path (ContentView.fetchWeather)
+//    CryoStationPicker.swift, CryoTransportControls.swift
+//    Engine/                      — MusicStationCatalog, MusicPlaybackManager
+//    (Removed 2026 NOV 23, roadmap 013: unused CryoSleepTimerPicker + Engine/WeatherManager.
+//     The sleep timer lives only in ContentView, driven by CloudSettings.sleepTimerMinutes.)
 
 // ============================================================================
 // MARK: - PLANNED UPDATES

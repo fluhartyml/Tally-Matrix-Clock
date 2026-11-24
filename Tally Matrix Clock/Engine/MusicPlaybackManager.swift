@@ -42,8 +42,6 @@ public class MusicPlaybackManager {
     /// (the Apple-supported path) instead of resolving `.url()` + `AsyncImage`, which
     /// returns a `musickit://` URL that fails to load on the iOS 27 beta.
     public var currentArtwork: Artwork?
-    public var sleepTimerEnd: Date?
-    public var sleepTimerRemaining = ""
     public var isAuthorized = false
     public var errorMessage = ""
     public var playbackTime: TimeInterval = 0
@@ -69,7 +67,6 @@ public class MusicPlaybackManager {
     }
 
     private let player = ApplicationMusicPlayer.shared
-    private var timerTask: Task<Void, Never>?
     private var nowPlayingTask: Task<Void, Never>?
 
     public init() {
@@ -465,35 +462,10 @@ public class MusicPlaybackManager {
         }
     }
 
-    // MARK: - Sleep Timer
-
-    public func startSleepTimer(minutes: Int) {
-        if minutes == 0 {
-            sleepTimerEnd = nil
-            sleepTimerRemaining = ""
-            timerTask?.cancel()
-            return
-        }
-
-        sleepTimerEnd = Date().addingTimeInterval(Double(minutes) * 60)
-        timerTask?.cancel()
-        timerTask = Task { @MainActor [weak self] in
-            while !Task.isCancelled {
-                guard let self, let end = self.sleepTimerEnd else { return }
-                let remaining = end.timeIntervalSinceNow
-                if remaining <= 0 {
-                    self.stop()
-                    self.sleepTimerEnd = nil
-                    self.sleepTimerRemaining = ""
-                    return
-                }
-                let mins = Int(remaining) / 60
-                let secs = Int(remaining) % 60
-                self.sleepTimerRemaining = String(format: "%d:%02d", mins, secs)
-                try? await Task.sleep(for: .seconds(1))
-            }
-        }
-    }
+    // REM (roadmap 013, 2026 NOV 23): the sleep timer lives in ONE place — ContentView
+    // (startSleepTimer / checkSleepTimer), driven by CloudSettings.sleepTimerMinutes so it
+    // syncs across Apple TVs. The player's own copy was only reached by the never-shown
+    // CryoSleepTimerPicker and was removed with it (both are in git history).
 }
 
 // MARK: - Repeat Mode

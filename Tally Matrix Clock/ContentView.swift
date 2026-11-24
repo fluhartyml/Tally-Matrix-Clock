@@ -660,6 +660,10 @@ struct ContentView: View {
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
     }
 
+    // REM (roadmap 013, 2026 NOV 23): the ONE weather path — LocationManager + this
+    // function, every 15 minutes. The unused CryoKit CryoWeatherManager (its own location
+    // lookup and fetch) was removed; it is in git history. Night Mode's sunrise/sunset
+    // (roadmap 018–020) must come through here, not a second fetch.
     func fetchWeather() {
         guard settings.showWeather else { return }
         guard let location = locationManager.location else {
